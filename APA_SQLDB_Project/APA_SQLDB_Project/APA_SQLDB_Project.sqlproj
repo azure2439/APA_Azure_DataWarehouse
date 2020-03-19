@@ -1,0 +1,384 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <Name>APA_SQLDB_Project</Name>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>4.1</ProjectVersion>
+    <ProjectGuid>{98f7e4ac-bf50-47fd-ab49-00ed1ab83e9d}</ProjectGuid>
+    <DSP>Microsoft.Data.Tools.Schema.Sql.Sql130DatabaseSchemaProvider</DSP>
+    <OutputType>Database</OutputType>
+    <RootPath>
+    </RootPath>
+    <RootNamespace>APA_SQLDB_Project</RootNamespace>
+    <AssemblyName>APA_SQLDB_Project</AssemblyName>
+    <ModelCollation>1033,CI</ModelCollation>
+    <DefaultFileStructure>BySchemaAndSchemaType</DefaultFileStructure>
+    <DeployToDatabase>True</DeployToDatabase>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetLanguage>CS</TargetLanguage>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <SqlServerVerification>False</SqlServerVerification>
+    <IncludeCompositeObjects>True</IncludeCompositeObjects>
+    <TargetDatabaseSet>True</TargetDatabaseSet>
+    <DefaultCollation>SQL_Latin1_General_CP1_CI_AS</DefaultCollation>
+    <DefaultFilegroup>PRIMARY</DefaultFilegroup>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>False</TreatWarningsAsErrors>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineDebug>false</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <BuildScriptName>$(MSBuildProjectName).sql</BuildScriptName>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <DefineDebug>true</DefineDebug>
+    <DefineTrace>true</DefineTrace>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
+    <!-- Default to the v11.0 targets path if the targets file for the current VS version is not found -->
+    <SSDTExists Condition="Exists('$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets')">True</SSDTExists>
+    <VisualStudioVersion Condition="'$(SSDTExists)' == ''">11.0</VisualStudioVersion>
+  </PropertyGroup>
+  <Import Condition="'$(SQLDBExtensionsRefPath)' != ''" Project="$(SQLDBExtensionsRefPath)\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <Import Condition="'$(SQLDBExtensionsRefPath)' == ''" Project="$(MSBuildExtensionsPath)\Microsoft\VisualStudio\v$(VisualStudioVersion)\SSDT\Microsoft.Data.Tools.Schema.SqlTasks.targets" />
+  <ItemGroup>
+    <Folder Include="Properties" />
+    <Folder Include="tmp\" />
+    <Folder Include="tmp\Tables\" />
+    <Folder Include="dbo\" />
+    <Folder Include="dbo\Tables\" />
+    <Folder Include="stg\" />
+    <Folder Include="stg\Tables\" />
+    <Folder Include="rpt\" />
+    <Folder Include="rpt\Tables\" />
+    <Folder Include="etl\" />
+    <Folder Include="etl\Tables\" />
+    <Folder Include="cfg\" />
+    <Folder Include="cfg\Tables\" />
+    <Folder Include="dbo\Views\" />
+    <Folder Include="tmp\Stored Procedures\" />
+    <Folder Include="cfg\Stored Procedures\" />
+    <Folder Include="dbo\Stored Procedures\" />
+    <Folder Include="etl\Stored Procedures\" />
+    <Folder Include="Security\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Build Include="tmp\Tables\dj_cm_providerregistration.sql" />
+    <Build Include="dbo\Tables\Name_Address_2015Q3.sql" />
+    <Build Include="stg\Tables\imis_Subscriptions.sql" />
+    <Build Include="tmp\Tables\dj_comments_comment.sql" />
+    <Build Include="tmp\Tables\Cadmium_Submissions.sql" />
+    <Build Include="stg\Tables\imis_Name_GeoCode.sql" />
+    <Build Include="stg\Tables\imis_Name_Address.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2018Q3.sql" />
+    <Build Include="tmp\Tables\dj_comments_extendedeventevaluation.sql" />
+    <Build Include="tmp\Tables\dj_django_site.sql" />
+    <Build Include="rpt\Tables\dimOrg.sql" />
+    <Build Include="tmp\Tables\dj_consultants_rfp.sql" />
+    <Build Include="stg\Tables\imis_Demo_Idonate.sql" />
+    <Build Include="tmp\Tables\dj_django_redirect.sql" />
+    <Build Include="rpt\Tables\dimRace.sql" />
+    <Build Include="tmp\Tables\dj_exam_examregistration.sql" />
+    <Build Include="rpt\Tables\dimDate.sql" />
+    <Build Include="dbo\Tables\Name_Address_2019Q2.sql" />
+    <Build Include="stg\Tables\imis_Meet_Master.sql" />
+    <Build Include="tmp\Tables\dj_knowledgebase_collectionrelationship.sql" />
+    <Build Include="rpt\Tables\dimSalary.sql" />
+    <Build Include="stg\Tables\imis_ORG_Demographics.sql" />
+    <Build Include="dbo\Tables\Name_Address_2018Q3.sql" />
+    <Build Include="tmp\Tables\dj_learn_grouplicense.sql" />
+    <Build Include="rpt\Tables\dimMemberType.sql" />
+    <Build Include="tmp\Tables\ChangedMemberID.sql" />
+    <Build Include="tmp\Tables\dj_learn_learncourseinfo.sql" />
+    <Build Include="dbo\Tables\Name_Address_2016Q4.sql" />
+    <Build Include="stg\Tables\imis_UD_Table.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2016Q2.sql" />
+    <Build Include="rpt\Tables\dimAddress.sql" />
+    <Build Include="stg\Tables\imis_Demo_Recurring_Gift.sql" />
+    <Build Include="tmp\Tables\dj_media_media.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2017Q4.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2017Q2.sql" />
+    <Build Include="tmp\Tables\dj_pages_landingpage.sql" />
+    <Build Include="dbo\Tables\Name_2019Q2.sql" />
+    <Build Include="rpt\Tables\dimProductCode.sql" />
+    <Build Include="tmp\Tables\dj_publications_publication.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2019Q3.sql" />
+    <Build Include="stg\Tables\imis_Mailing_Demographics.sql" />
+    <Build Include="tmp\Tables\dj_research_inquiries_inquiry.sql" />
+    <Build Include="etl\Tables\PipelineExecutionLog.sql" />
+    <Build Include="dbo\Tables\Name_2019Q4.sql" />
+    <Build Include="dbo\Tables\Name_2019Q3.sql" />
+    <Build Include="tmp\Tables\dj_submissions_review.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2019Q4.sql" />
+    <Build Include="tmp\Tables\dj_support_ticket.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2019Q3.sql" />
+    <Build Include="tmp\Tables\imis_Product_Type.sql" />
+    <Build Include="tmp\Tables\dj_conference_cadmiummapping.sql" />
+    <Build Include="stg\Tables\imis_PAS_Demographics.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2019Q2.sql" />
+    <Build Include="stg\Tables\imis_Verification.sql" />
+    <Build Include="tmp\Tables\dj_conference_cadmiumsync.sql" />
+    <Build Include="stg\Tables\imis_Custom_AICP_Exam_Score.sql" />
+    <Build Include="tmp\Tables\dj_conference_microsite.sql" />
+    <Build Include="dbo\Tables\Name_Address_2017Q4.sql" />
+    <Build Include="dbo\Tables\ORG_Demographics_2020Q1.sql" />
+    <Build Include="stg\Tables\FactMember_Final.sql" />
+    <Build Include="tmp\Tables\dj_conference_microsite_program_search_filters.sql" />
+    <Build Include="dbo\Tables\Name_Address_2016Q1.sql" />
+    <Build Include="tmp\Tables\FactMember.sql" />
+    <Build Include="tmp\Tables\dj_conference_syncmapping.sql" />
+    <Build Include="tmp\Tables\FactMember_Final.sql" />
+    <Build Include="dbo\Tables\Product_Type_2020Q1.sql" />
+    <Build Include="rpt\Tables\dimMember.sql" />
+    <Build Include="stg\Tables\FactMember_Current.sql" />
+    <Build Include="rpt\Tables\dimProductType.sql" />
+    <Build Include="tmp\Tables\dj_content_content.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2018Q4.sql" />
+    <Build Include="stg\Tables\imis_Race_Origin.sql" />
+    <Build Include="dbo\Tables\Name_2020Q1.sql" />
+    <Build Include="tmp\Tables\dj_content_content_permission_groups.sql" />
+    <Build Include="rpt\Tables\tblFactMember.sql" />
+    <Build Include="cfg\Tables\Data_Source.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2020Q1.sql" />
+    <Build Include="tmp\Tables\dj_content_contentrelationship.sql" />
+    <Build Include="tmp\Tables\FactMember_Final_bk_012820.sql" />
+    <Build Include="stg\Tables\imis_Direct_Debit.sql" />
+    <Build Include="rpt\Tables\dimMemberStatus.sql" />
+    <Build Include="stg\Tables\imis_PostalCodeRef.sql" />
+    <Build Include="stg\Tables\imis_BDR_AuthNet_Temp.sql" />
+    <Build Include="stg\Tables\imis_Member_Types.sql" />
+    <Build Include="tmp\Tables\FactMember_Current.sql" />
+    <Build Include="stg\Tables\imis_csi_MergedRecords.sql" />
+    <Build Include="stg\Tables\imis_ACAD_Program_Details.sql" />
+    <Build Include="dbo\Tables\Name_Address_2019Q3.sql" />
+    <Build Include="dbo\Tables\EP_Metrics_Cohort_imis_live.sql" />
+    <Build Include="tmp\Tables\FactMember_Final_Current.sql" />
+    <Build Include="tmp\Tables\imis_Member_Types.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2016Q3.sql" />
+    <Build Include="dbo\Tables\Name_Address_2018Q4.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2017Q3.sql" />
+    <Build Include="stg\Tables\imis_ContactMain.sql" />
+    <Build Include="dbo\Tables\Name_Address_2017Q1.sql" />
+    <Build Include="rpt\Tables\tblFactActivity.sql" />
+    <Build Include="stg\Tables\imis_Custom_Credit.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2018Q1.sql" />
+    <Build Include="tmp\Tables\imis_Custom_Address_Geocode.sql" />
+    <Build Include="rpt\Tables\dimSourceCode.sql" />
+    <Build Include="tmp\Tables\imis_Custom_Event_Schedule.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2016Q1.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2019Q4.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2016Q2.sql" />
+    <Build Include="stg\Tables\imis_GroupMember.sql" />
+    <Build Include="stg\Tables\imis_EP_Metrics_Cohort.sql" />
+    <Build Include="stg\Tables\imis_Product_Type.sql" />
+    <Build Include="dbo\Tables\imis_Historical_Name.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2016Q3.sql" />
+    <Build Include="dbo\Tables\Member_Types_2020Q1.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2016Q4.sql" />
+    <Build Include="stg\Tables\imis_Name.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2017Q1.sql" />
+    <Build Include="stg\Tables\imis_Custom_Event_Registration.sql" />
+    <Build Include="stg\Tables\imis_Advocacy.sql" />
+    <Build Include="rpt\Tables\dimChapter.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2017Q2.sql" />
+    <Build Include="stg\Tables\imis_GroupTypeRef.sql" />
+    <Build Include="dbo\Tables\zzz_dimCampaignCode.sql" />
+    <Build Include="stg\Tables\imis_Trans.sql" />
+    <Build Include="dbo\Tables\zzz_dimChapter.sql" />
+    <Build Include="stg\Tables\imis_EP_Metrics_General.sql" />
+    <Build Include="dbo\Tables\Name_Address_2018Q1.sql" />
+    <Build Include="dbo\Tables\Product_Function_2020Q1.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2017Q3.sql" />
+    <Build Include="dbo\Tables\zzz_dimMemberType.sql" />
+    <Build Include="tmp\Tables\imis_Name.sql" />
+    <Build Include="dbo\Tables\Activity_2020Q1.sql" />
+    <Build Include="dbo\Tables\zzz_dimProductType.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2017Q4.sql" />
+    <Build Include="dbo\Tables\Name_Address_2016Q2.sql" />
+    <Build Include="dbo\Tables\zzz_dimSource.sql" />
+    <Build Include="tmp\Tables\imis_Activity.sql" />
+    <Build Include="dbo\Tables\zzz_dimProductCode.sql" />
+    <Build Include="stg\Tables\imis_Custom_Degree.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2018Q1.sql" />
+    <Build Include="tmp\Tables\imis_Trans.sql" />
+    <Build Include="rpt\Tables\dimStatus.sql" />
+    <Build Include="dbo\Tables\zzz_dimMember.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2018Q2.sql" />
+    <Build Include="dbo\Tables\zzz_dimdate.sql" />
+    <Build Include="tmp\Tables\imis_UD_Table.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2019Q1.sql" />
+    <Build Include="dbo\Tables\zzz_dimAddress.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2018Q3.sql" />
+    <Build Include="dbo\Tables\zzz_dimActivityCategory.sql" />
+    <Build Include="tmp\Tables\imis_ACAD_Program_Details.sql" />
+    <Build Include="dbo\Tables\zzz_dimSourceCode.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2018Q4.sql" />
+    <Build Include="dbo\Tables\zzz_dimMemberStatus.sql" />
+    <Build Include="tmp\Tables\imis_Advocacy.sql" />
+    <Build Include="stg\Tables\imis_Custom_Address_Geocode.sql" />
+    <Build Include="dbo\Tables\zzz_dimRace.sql" />
+    <Build Include="dbo\Tables\Subscriptions_2019Q1.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2016Q4.sql" />
+    <Build Include="dbo\Tables\zzz_dimStatus.sql" />
+    <Build Include="tmp\Tables\imis_BDR_AuthNet_Temp.sql" />
+    <Build Include="tmp\Tables\imis_Meet_Master.sql" />
+    <Build Include="dbo\Tables\GenTables_2019Q1.sql" />
+    <Build Include="stg\Tables\imis_Custom_Event_Schedule.sql" />
+    <Build Include="rpt\Tables\dimActivityCategory.sql" />
+    <Build Include="tmp\Tables\imis_Custom_AICP_Exam_Score.sql" />
+    <Build Include="dbo\Tables\Name_Address_2019Q4.sql" />
+    <Build Include="tmp\Tables\imis_Product_Function.sql" />
+    <Build Include="tmp\Tables\imis_auditfact.sql" />
+    <Build Include="tmp\Tables\imis_Custom_Credit.sql" />
+    <Build Include="dbo\Tables\Name_Address_2019Q1.sql" />
+    <Build Include="tmp\Tables\imis_Custom_Degree.sql" />
+    <Build Include="tmp\Tables\imis_Subscriptions.sql" />
+    <Build Include="dbo\Tables\Name_Address_2017Q2.sql" />
+    <Build Include="stg\Tables\imis_RealMagnet.sql" />
+    <Build Include="tmp\Tables\imis_Custom_Event_Registration.sql" />
+    <Build Include="tmp\Tables\imis_Name_Address.sql" />
+    <Build Include="tmp\Tables\dj_cm_claim.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2018Q2.sql" />
+    <Build Include="tmp\Tables\imis_Custom_SchoolAccredited.sql" />
+    <Build Include="dbo\Tables\Name_2017Q2.sql" />
+    <Build Include="tmp\Tables\dj_cm_period.sql" />
+    <Build Include="tmp\Tables\imis_Demo_Idonate.sql" />
+    <Build Include="tmp\Tables\imis_GroupTypeRef.sql" />
+    <Build Include="tmp\Tables\dj_cm_log.sql" />
+    <Build Include="stg\Tables\imis_Activity.sql" />
+    <Build Include="tmp\Tables\imis_Gen_Tables.sql" />
+    <Build Include="stg\Tables\imis_Gen_Tables.sql" />
+    <Build Include="tmp\Tables\imis_Demo_Recurring_Gift.sql" />
+    <Build Include="tmp\Tables\RptFact.sql" />
+    <Build Include="stg\Tables\imis_EP_Metrics_Subscriptions.sql" />
+    <Build Include="tmp\Tables\dj_myapa_individualprofile.sql" />
+    <Build Include="tmp\Tables\imis_Direct_Debit.sql" />
+    <Build Include="tmp\Tables\dj_myapa_jobhistory.sql" />
+    <Build Include="tmp\Tables\imis_Product_bk.sql" />
+    <Build Include="tmp\Tables\imis_EP_Metrics_Cohort.sql" />
+    <Build Include="dbo\Tables\Gen_Tables_2020Q1.sql" />
+    <Build Include="tmp\Tables\imis_Product.sql" />
+    <Build Include="tmp\Tables\dj_myapa_organizationprofile.sql" />
+    <Build Include="tmp\Tables\imis_EP_Metrics_General.sql" />
+    <Build Include="stg\Tables\imis_Product_Function.sql" />
+    <Build Include="dbo\Tables\name_address_prodfix.sql" />
+    <Build Include="tmp\Tables\dj_myapa_contact.sql" />
+    <Build Include="dbo\Tables\Product_2020Q1.sql" />
+    <Build Include="tmp\Tables\Cadmium_Authors.sql" />
+    <Build Include="tmp\Tables\imis_PostalCodeRef.sql" />
+    <Build Include="tmp\Tables\imis_EP_Metrics_Subscriptions.sql" />
+    <Build Include="dbo\Tables\Name_Address_2018Q2.sql" />
+    <Build Include="tmp\Tables\dj_myapa_contactrole.sql" />
+    <Build Include="tmp\Tables\imis_Ind_Demographics.sql" />
+    <Build Include="tmp\Tables\imis_UserMain.sql" />
+    <Build Include="tmp\Tables\dj_places_contentplace.sql" />
+    <Build Include="dbo\Tables\Name_Address_2016Q3.sql" />
+    <Build Include="stg\Tables\imis_Product.sql" />
+    <Build Include="tmp\Tables\imis_Mailing_Demographics.sql" />
+    <Build Include="dbo\Tables\Race_Origin_2020Q1.sql" />
+    <Build Include="tmp\Tables\dj_places_place.sql" />
+    <Build Include="dbo\Tables\Name_2015Q3.sql" />
+    <Build Include="stg\Tables\imis_Ind_Demographics.sql" />
+    <Build Include="tmp\Tables\imis_Name_GeoCode.sql" />
+    <Build Include="dbo\Tables\Name_2016Q1.sql" />
+    <Build Include="tmp\Tables\dj_places_placedata.sql" />
+    <Build Include="dbo\Tables\Name_2016Q2.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2016Q1.sql" />
+    <Build Include="tmp\Tables\imis_ORG_Demographics.sql" />
+    <Build Include="dbo\Tables\Name_2016Q3.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2019Q2.sql" />
+    <Build Include="tmp\Tables\dj_events_event.sql" />
+    <Build Include="dbo\Tables\Name_2016Q4.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2017Q1.sql" />
+    <Build Include="tmp\Tables\imis_PAS_Demographics.sql" />
+    <Build Include="dbo\Tables\Name_2017Q1.sql" />
+    <Build Include="tmp\Tables\imis_GroupMember.sql" />
+    <Build Include="tmp\Tables\dj_exam_exam.sql" />
+    <Build Include="dbo\Tables\Name_2017Q3.sql" />
+    <Build Include="tmp\Tables\imis_Race_Origin.sql" />
+    <Build Include="tmp\Tables\imis_csi_MergedRecords.sql" />
+    <Build Include="dbo\Tables\Name_2017Q4.sql" />
+    <Build Include="rpt\Tables\dimSource.sql" />
+    <Build Include="tmp\Tables\dj_jobs_job.sql" />
+    <Build Include="dbo\Tables\Name_2018Q1.sql" />
+    <Build Include="tmp\Tables\imis_RealMagnet.sql" />
+    <Build Include="dbo\Tables\Name_2018Q2.sql" />
+    <Build Include="tmp\Tables\imis_ContactMain.sql" />
+    <Build Include="dbo\Tables\Trans_2020Q1.sql" />
+    <Build Include="tmp\Tables\dj_cities_light_city.sql" />
+    <Build Include="dbo\Tables\Name_2018Q3.sql" />
+    <Build Include="tmp\Tables\imis_Verification.sql" />
+    <Build Include="dbo\Tables\Name_Address_2020Q1.sql" />
+    <Build Include="dbo\Tables\Name_2018Q4.sql" />
+    <Build Include="tmp\Tables\dj_cities_light_country.sql" />
+    <Build Include="dbo\Tables\Name_2019Q1.sql" />
+    <Build Include="tmp\Tables\dj_cities_light_region.sql" />
+    <Build Include="etl\Tables\executionlog.sql" />
+    <Build Include="rpt\Tables\dimCampaignCode.sql" />
+    <Build Include="stg\Tables\imis_UserMain.sql" />
+    <Build Include="stg\Tables\imis_Custom_SchoolAccredited.sql" />
+    <Build Include="tmp\Tables\FactMember_Final_bk_013020.sql" />
+    <Build Include="tmp\Tables\dj_cm_providerapplication.sql" />
+    <Build Include="dbo\Tables\Name_Address_2017Q3.sql" />
+    <Build Include="dbo\Tables\Ind_Demographics_2020Q1.sql" />
+    <Build Include="dbo\Views\vw_dimAddress_Work.sql" />
+    <Build Include="dbo\Views\vw_dimAddress_Home.sql" />
+    <Build Include="dbo\Views\vw_dimProductCode.sql" />
+    <Build Include="dbo\Views\vw_dimDate_Trans.sql" />
+    <Build Include="dbo\Views\vw_dimActivityCategory.sql" />
+    <Build Include="dbo\Views\vw_tblFactMember_Current.sql" />
+    <Build Include="dbo\Views\vw_dimStatus.sql" />
+    <Build Include="dbo\Views\vw_tblFactActivity.sql" />
+    <Build Include="dbo\Views\vw_dimMemberType.sql" />
+    <Build Include="dbo\Views\vw_dimMember.sql" />
+    <Build Include="dbo\Views\vw_dimSalary.sql" />
+    <Build Include="dbo\Views\vw_dimMemberStatus.sql" />
+    <Build Include="dbo\Views\vw_dimProductType.sql" />
+    <Build Include="dbo\Views\vw_tblFactMember.sql" />
+    <Build Include="dbo\Views\vw_dimMemberV2.sql" />
+    <Build Include="dbo\Views\vw_dimDate_PaidThru.sql" />
+    <Build Include="dbo\Views\FUNC_DESC.sql" />
+    <Build Include="dbo\Views\vw_dimRace.sql" />
+    <Build Include="dbo\Views\vw_dimChapter.sql" />
+    <Build Include="dbo\Views\vw_tblFactMember_IS.sql" />
+    <Build Include="dbo\Views\vw_tblFactMember_final_Current.sql" />
+    <Build Include="tmp\Stored Procedures\usp_IMIS_tmp_to_Stage.sql" />
+    <Build Include="cfg\Stored Procedures\usp_ingestsource_metadata.sql" />
+    <Build Include="cfg\Stored Procedures\usp_update_lastmodified.sql" />
+    <Build Include="dbo\Stored Procedures\zzz_load_rpt_fact_activity.sql" />
+    <Build Include="etl\Stored Procedures\usp_PipelineExecutionLog.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Activity_Fact_Insert.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Audit_Fact_Update_Insert.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Daily_Tmp_To_Stage.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Dimension_Table_Merge.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Dimension_Integrity_Check.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Tables_Load.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Timestamp_Update.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Monthly_Tmp_To_Stage.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Weekly_Tmp_To_Stage.sql" />
+    <Build Include="etl\Stored Procedures\zzz_usp_IMIS_Log_Table_Counts.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Member_Fact_Update_Insert.sql" />
+    <Build Include="etl\Stored Procedures\usp_IMIS_Log_Table_Counts.sql" />
+    <Build Include="Security\cfg.sql" />
+    <Build Include="Security\etl.sql" />
+    <Build Include="Security\rpt.sql" />
+    <Build Include="Security\stg.sql" />
+    <Build Include="Security\tmp.sql" />
+  </ItemGroup>
+</Project>

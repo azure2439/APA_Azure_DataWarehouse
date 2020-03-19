@@ -1,0 +1,27 @@
+﻿CREATE TABLE [tmp].[imis_ContactMain] (
+    [ContactKey]                   UNIQUEIDENTIFIER NOT NULL,
+    [ContactStatusCode]            NVARCHAR (2)     NOT NULL,
+    [FullName]                     NVARCHAR (110)   NOT NULL,
+    [SortName]                     NVARCHAR (110)   NOT NULL,
+    [IsInstitute]                  BIT              NOT NULL,
+    [TaxIDNumber]                  NVARCHAR (12)    NULL,
+    [NoSolicitationFlag]           BIT              NOT NULL,
+    [SyncContactID]                VARCHAR (20)     NULL,
+    [UpdatedOn]                    DATETIME         NOT NULL,
+    [UpdatedByUserKey]             UNIQUEIDENTIFIER NOT NULL,
+    [IsIDEditable]                 BIT              NULL,
+    [ID]                           NVARCHAR (12)    NULL,
+    [PreferredAddressCategoryCode] INT              NOT NULL,
+    [IsSortNameOverridden]         BIT              CONSTRAINT [DF_ContactMain_IsSortNameOverridden] DEFAULT ((0)) NOT NULL,
+    [PrimaryMembershipGroupKey]    UNIQUEIDENTIFIER NULL,
+    [MajorKey]                     NVARCHAR (30)    NULL,
+    [AccessKey]                    UNIQUEIDENTIFIER NOT NULL,
+    [CreatedByUserKey]             UNIQUEIDENTIFIER NOT NULL,
+    [CreatedOn]                    DATETIME         NOT NULL,
+    [TextOnlyEmailFlag]            BIT              CONSTRAINT [DF_ContactMain_TextOnlyEmailFlag] DEFAULT ((0)) NOT NULL,
+    [ContactTypeKey]               UNIQUEIDENTIFIER NOT NULL,
+    [OptOutFlag]                   BIT              CONSTRAINT [DF_ContactMain_OptOutFlag] DEFAULT ((0)) NOT NULL,
+    [MarkedForDeleteOn]            DATETIME         NULL,
+    CONSTRAINT [PK_ContactMain] PRIMARY KEY CLUSTERED ([ContactKey] ASC)
+);
+

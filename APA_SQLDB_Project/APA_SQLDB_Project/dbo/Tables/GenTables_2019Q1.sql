@@ -1,0 +1,11 @@
+﻿CREATE TABLE [dbo].[GenTables_2019Q1] (
+    [TABLE_NAME]           VARCHAR (30)  NOT NULL,
+    [CODE]                 VARCHAR (60)  NOT NULL,
+    [SUBSTITUTE]           VARCHAR (255) NOT NULL,
+    [UPPER_CODE]           VARCHAR (60)  NOT NULL,
+    [DESCRIPTION]          VARCHAR (255) NOT NULL,
+    [OBSOLETE_DESCRIPTION] VARCHAR (255) NOT NULL,
+    [TIME_STAMP]           BIGINT        NULL,
+    CONSTRAINT [PK_Gen_Tables] PRIMARY KEY CLUSTERED ([TABLE_NAME] ASC, [CODE] ASC)
+);
+

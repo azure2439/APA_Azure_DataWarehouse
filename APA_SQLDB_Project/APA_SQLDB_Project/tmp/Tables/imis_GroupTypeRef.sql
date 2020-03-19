@@ -1,0 +1,25 @@
+﻿CREATE TABLE [tmp].[imis_GroupTypeRef] (
+    [GroupTypeKey]                   UNIQUEIDENTIFIER NOT NULL,
+    [GroupTypeName]                  NVARCHAR (65)    NOT NULL,
+    [IsSystem]                       BIT              CONSTRAINT [DF_GroupTypeRef_IsSystem] DEFAULT ((0)) NOT NULL,
+    [IsPaymentRequired]              BIT              CONSTRAINT [DF_GroupTypeRef_IsPaymentRequired] DEFAULT ((0)) NOT NULL,
+    [IsDateLimited]                  BIT              CONSTRAINT [DF_GroupTypeRef_IsDateLimited] DEFAULT ((0)) NOT NULL,
+    [GroupMemberBranchName]          NVARCHAR (100)   NULL,
+    [IsInvitationOnly]               BIT              NOT NULL,
+    [DefaultGroupStatusCode]         NVARCHAR (4)     NOT NULL,
+    [IsSimpleGroup]                  BIT              CONSTRAINT [DF_GroupTypeRef_IsSimpleGroup] DEFAULT ((0)) NOT NULL,
+    [MemberQueryFolderKey]           UNIQUEIDENTIFIER NULL,
+    [InheritRolesFlag]               BIT              CONSTRAINT [DF_GroupTypeRef_InheritRolesFlag] DEFAULT ((0)) NOT NULL,
+    [IsSingleRole]                   BIT              CONSTRAINT [DF_GroupTypeRef_IsSingleRole] DEFAULT ((0)) NOT NULL,
+    [GroupTypeDesc]                  NVARCHAR (250)   NULL,
+    [CreatedByUserKey]               UNIQUEIDENTIFIER NOT NULL,
+    [UpdatedByUserKey]               UNIQUEIDENTIFIER NOT NULL,
+    [CreatedOn]                      DATETIME         NOT NULL,
+    [UpdatedOn]                      DATETIME         NOT NULL,
+    [LandingPageContentKey]          UNIQUEIDENTIFIER NULL,
+    [IsRelationshipGroup]            BIT              CONSTRAINT [DF_GroupTypeRef_IsRelationshipGroup] DEFAULT ((0)) NOT NULL,
+    [ExtendActiveMembershipTermFlag] BIT              CONSTRAINT [DF_GroupTypeRef_ExtendActiveMembershipTermFlag] DEFAULT ((0)) NOT NULL,
+    CONSTRAINT [PK_GroupTypeRef] PRIMARY KEY CLUSTERED ([GroupTypeKey] ASC),
+    CONSTRAINT [AK_GroupTypeRef_GroupTypeName] UNIQUE NONCLUSTERED ([GroupTypeName] ASC)
+);
+

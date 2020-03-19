@@ -1,0 +1,17 @@
+﻿CREATE VIEW vw_tblFactActivity AS
+SELECT 
+[MemberIDKey]
+      ,[MemberTypeIDKey]
+      ,[ProductTypeKey]
+      ,[ProductCodeKey]
+      ,[ActivityCategoryKey]
+      ,[CampaignCodeKey]
+      ,[Trans_Date_Key]
+      ,[Paid_Through_Key]
+      ,[SourceKey]
+      ,[Quantity]
+      ,[Amount]
+      ,[Units]
+      ,[LastUpdated]
+      ,[LastModifiedBy]
+  FROM [rpt].[tblFactActivity]

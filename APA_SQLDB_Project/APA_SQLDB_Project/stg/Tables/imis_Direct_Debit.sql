@@ -1,0 +1,25 @@
+﻿CREATE TABLE [stg].[imis_Direct_Debit] (
+    [ID]                VARCHAR (10) CONSTRAINT [DF__Direct_Debit__ID__56C38E83] DEFAULT ('') NOT NULL,
+    [AUTO_DEBIT]        BIT          CONSTRAINT [DF__Direct_De__AUTO___57B7B2BC] DEFAULT ((0)) NOT NULL,
+    [START_DATE]        DATETIME     NULL,
+    [ACCOUNT_NUM]       VARCHAR (20) CONSTRAINT [DF__Direct_De__ACCOU__58ABD6F5] DEFAULT ('') NOT NULL,
+    [ABA_ROUTING]       VARCHAR (9)  CONSTRAINT [DF__Direct_De__ABA_R__599FFB2E] DEFAULT ('') NOT NULL,
+    [MONTHLY_PAYMENT]   MONEY        CONSTRAINT [DF__Direct_De__MONTH__5A941F67] DEFAULT ((0)) NOT NULL,
+    [BANK_NAME]         VARCHAR (50) CONSTRAINT [DF__Direct_De__BANK___5B8843A0] DEFAULT ('') NOT NULL,
+    [REMAIN_DEBIT]      MONEY        CONSTRAINT [DF__Direct_De__REMAI__5C7C67D9] DEFAULT ((0)) NOT NULL,
+    [TOTAL_DEBIT]       MONEY        CONSTRAINT [DF__Direct_De__TOTAL__5D708C12] DEFAULT ((0)) NOT NULL,
+    [NUM_DEBIT]         FLOAT (53)   CONSTRAINT [DF__Direct_De__NUM_D__5E64B04B] DEFAULT ((0)) NOT NULL,
+    [REMAIN_TIMES]      FLOAT (53)   CONSTRAINT [DF__Direct_De__REMAI__5F58D484] DEFAULT ((0)) NOT NULL,
+    [RUN_DATE]          DATETIME     NULL,
+    [AT_CHECKING]       BIT          CONSTRAINT [DF__Direct_De__AT_CH__604CF8BD] DEFAULT ((0)) NOT NULL,
+    [AT_SAVING]         BIT          CONSTRAINT [DF__Direct_De__AT_SA__61411CF6] DEFAULT ((0)) NOT NULL,
+    [TIME_STAMP]        BIGINT       NULL,
+    [Id_Identitycolumn] INT          IDENTITY (1, 1) NOT NULL,
+    [LastUpdatedBy]     VARCHAR (40) CONSTRAINT [df_debitLastUpdatedBy] DEFAULT (suser_sname()) NULL,
+    [LastModified]      DATETIME     CONSTRAINT [df_debitLastModified] DEFAULT (getdate()) NULL,
+    [IsActive]          BIT          NULL,
+    [StartDate]         DATETIME     CONSTRAINT [df_debitStartDate] DEFAULT ('1901-01-01 00:00:00') NULL,
+    [EndDate]           DATETIME     CONSTRAINT [df_debitEndtDate] DEFAULT ('2999-12-31 00:00:00') NULL,
+    CONSTRAINT [pkDirect_DebitID] PRIMARY KEY CLUSTERED ([Id_Identitycolumn] ASC)
+);
+

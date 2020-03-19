@@ -1,0 +1,25 @@
+﻿CREATE TABLE [tmp].[dj_myapa_individualprofile] (
+    [id]               INT          NOT NULL,
+    [slug]             VARCHAR (50) NULL,
+    [share_profile]    VARCHAR (50) NOT NULL,
+    [share_contact]    VARCHAR (50) NOT NULL,
+    [share_bio]        VARCHAR (50) NOT NULL,
+    [share_social]     VARCHAR (50) NOT NULL,
+    [share_leadership] VARCHAR (50) NOT NULL,
+    [share_education]  VARCHAR (50) NOT NULL,
+    [share_jobs]       VARCHAR (50) NOT NULL,
+    [share_events]     VARCHAR (50) NOT NULL,
+    [share_resume]     VARCHAR (50) NOT NULL,
+    [share_conference] VARCHAR (50) NOT NULL,
+    [share_advocacy]   VARCHAR (50) NOT NULL,
+    [contact_id]       INT          NOT NULL,
+    [image_id]         INT          NULL,
+    [resume_id]        INT          NULL,
+    [statement]        TEXT         NULL,
+    [speaker_opt_out]  BIT          NOT NULL,
+    [experience]       TEXT         NULL,
+    [updated_time]     DATETIME     NULL,
+    [created_time]     DATETIME     NULL,
+    CONSTRAINT [myapa_individualprofile_pkey] PRIMARY KEY CLUSTERED ([id] ASC)
+);
+

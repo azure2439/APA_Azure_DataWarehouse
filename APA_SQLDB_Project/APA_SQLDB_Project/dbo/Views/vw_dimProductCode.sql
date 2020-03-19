@@ -1,0 +1,15 @@
+﻿CREATE VIEW vw_dimProductCode AS
+SELECT 
+	   [ProductCodeKey]
+      ,[ParentID]
+      ,[Product_Code]
+      ,[Product_Major]
+      ,[Product_Minor]
+      ,[Title]
+      ,[Description]
+      ,[LastUpdatedBy]
+      ,[LastModified]
+      ,[IsActive]
+      ,[StartDate]
+      ,[EndDate]
+FROM [rpt].[dimProductCode]

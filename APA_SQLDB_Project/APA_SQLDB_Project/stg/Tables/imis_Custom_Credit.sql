@@ -1,0 +1,28 @@
+﻿CREATE TABLE [stg].[imis_Custom_Credit] (
+    [ID]                     VARCHAR (10)  CONSTRAINT [DF__Custom_Credi__ID__4C43047E] DEFAULT ('') NOT NULL,
+    [SEQN]                   INT           CONSTRAINT [DF__Custom_Cre__SEQN__4D3728B7] DEFAULT ((0)) NOT NULL,
+    [CREDIT_STATUS]          VARCHAR (15)  CONSTRAINT [DF__Custom_Cr__CREDI__4E2B4CF0] DEFAULT ('') NOT NULL,
+    [CREDIT_PERIOD]          VARCHAR (15)  CONSTRAINT [DF__Custom_Cr__CREDI__4F1F7129] DEFAULT ('') NOT NULL,
+    [CREDIT_NUMBER]          FLOAT (53)    CONSTRAINT [DF__Custom_Cr__CREDI__50139562] DEFAULT ((0)) NOT NULL,
+    [CREDIT_NOTES]           VARCHAR (255) CONSTRAINT [DF__Custom_Cr__CREDI__5107B99B] DEFAULT ('') NOT NULL,
+    [CREDIT_REQUIRED_ADJUST] FLOAT (53)    CONSTRAINT [DF__Custom_Cr__CREDI__51FBDDD4] DEFAULT ((0)) NOT NULL,
+    [CREDIT_LAW_NUMBER]      FLOAT (53)    CONSTRAINT [DF__Custom_Cr__CREDI__52F0020D] DEFAULT ((0)) NOT NULL,
+    [CREDIT_ETHICS_NUMBER]   FLOAT (53)    CONSTRAINT [DF__Custom_Cr__CREDI__53E42646] DEFAULT ((0)) NOT NULL,
+    [PERIOD_ISCURRENT]       BIT           CONSTRAINT [DF__Custom_Cr__PERIO__54D84A7F] DEFAULT ((0)) NOT NULL,
+    [CREDIT_SELF_NUMBER]     FLOAT (53)    CONSTRAINT [DF__Custom_Cr__CREDI__55CC6EB8] DEFAULT ((0)) NOT NULL,
+    [CREDIT_AUTHORED_NUMBER] FLOAT (53)    CONSTRAINT [DF__Custom_Cr__CREDI__56C092F1] DEFAULT ((0)) NOT NULL,
+    [PERIOD_EFFECTIVE_START] DATETIME      NULL,
+    [PERIOD_EFFECTIVE_END]   DATETIME      NULL,
+    [PERIOD_REINSTATE_END]   DATETIME      NULL,
+    [CM_INTENTIONS]          VARCHAR (15)  CONSTRAINT [DF__Custom_Cr__CM_IN__57B4B72A] DEFAULT ('') NOT NULL,
+    [TIME_STAMP]             BIGINT        NULL,
+    [PERIOD_COMPLETE]        BIT           NULL,
+    [Id_Identitycolumn]      INT           IDENTITY (1, 1) NOT NULL,
+    [LastUpdatedBy]          VARCHAR (40)  CONSTRAINT [df_creditLastUpdatedBy] DEFAULT (suser_sname()) NULL,
+    [LastModified]           DATETIME      CONSTRAINT [df_creditLastModified] DEFAULT (getdate()) NULL,
+    [IsActive]               BIT           NULL,
+    [StartDate]              DATETIME      CONSTRAINT [df_creditStartDate] DEFAULT ('1901-01-01 00:00:00') NULL,
+    [EndDate]                DATETIME      CONSTRAINT [df_creditEndtDate] DEFAULT ('2999-12-31 00:00:00') NULL,
+    CONSTRAINT [PK_Custom_Credit] PRIMARY KEY CLUSTERED ([Id_Identitycolumn] ASC)
+);
+
