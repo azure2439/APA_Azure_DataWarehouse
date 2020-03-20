@@ -380,5 +380,6 @@
     <Build Include="Security\rpt.sql" />
     <Build Include="Security\stg.sql" />
     <Build Include="Security\tmp.sql" />
+    <Build Include="tmp\Tables\test.sql" />
   </ItemGroup>
 </Project>
