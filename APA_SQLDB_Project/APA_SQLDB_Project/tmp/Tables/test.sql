@@ -1,0 +1,4 @@
+﻿CREATE TABLE [tmp].[test]
+(
+	[Id] INT NOT NULL PRIMARY KEY
+)
