@@ -77,7 +77,9 @@
     [TEMPLATE_STATE_CODE]             INT             CONSTRAINT [DF_Meet_Master_Template_State_Code] DEFAULT ((0)) NOT NULL,
     [ENABLE_TIME_CONFLICTS]           BIT             CONSTRAINT [DF_Meet_Master_Enable_Time_Conflicts] DEFAULT ((0)) NOT NULL,
     [ALLOW_REGISTRANT_CONFLICTS]      BIT             CONSTRAINT [DF_Meet_Master_Allow_Registrant_Conflicts] DEFAULT ((0)) NOT NULL,
-    [TIME_STAMP]                      BIGINT          NULL,
+    [TIME_STAMP]                      ROWVERSION      NULL,
     CONSTRAINT [PK_Meet_Master] PRIMARY KEY CLUSTERED ([MEETING] ASC)
 );
+
+
 

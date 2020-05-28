@@ -14,7 +14,7 @@
     [publish_time]         DATETIME        NULL,
     [published_by_id]      INT             NULL,
     [published_time]       DATETIME        NULL,
-    [bio]                  TEXT            NULL,
+    [bio]                  VARCHAR (MAX)   NULL,
     [first_name]           VARCHAR (20)    NULL,
     [last_name]            VARCHAR (30)    NULL,
     [middle_name]          VARCHAR (20)    NULL,
@@ -39,4 +39,6 @@
     [zip_code_extension]   VARCHAR (4)     NULL,
     CONSTRAINT [myapa_contactrole_pkey] PRIMARY KEY CLUSTERED ([id] ASC)
 );
+
+
 

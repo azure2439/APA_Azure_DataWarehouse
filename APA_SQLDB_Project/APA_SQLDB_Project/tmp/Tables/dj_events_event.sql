@@ -8,8 +8,8 @@
     [zip_code]                  VARCHAR (10)    NULL,
     [country]                   VARCHAR (100)   NULL,
     [event_type]                VARCHAR (50)    NOT NULL,
-    [begin_time]                DATETIME        NULL,
-    [end_time]                  DATETIME        NULL,
+    [begin_time]                VARCHAR (50)    NULL,
+    [end_time]                  VARCHAR (50)    NULL,
     [cm_status]                 VARCHAR (5)     NOT NULL,
     [cm_requested]              NUMERIC (6, 2)  NULL,
     [cm_approved]               NUMERIC (6, 2)  NULL,
@@ -40,4 +40,6 @@
     [zip_code_extension]        VARCHAR (4)     NULL,
     CONSTRAINT [events_event_pkey] PRIMARY KEY CLUSTERED ([content_ptr_id] ASC)
 );
+
+
 

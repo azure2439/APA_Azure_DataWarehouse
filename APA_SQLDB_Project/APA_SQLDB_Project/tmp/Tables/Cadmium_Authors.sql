@@ -6,12 +6,12 @@
     [AuthorAssistantName]           NVARCHAR (80)   NULL,
     [AuthorAssistantTelephone]      NVARCHAR (80)   NULL,
     [AuthorAssociationMemberNumber] NVARCHAR (80)   NULL,
-    [AuthorAssociationMemberYesNo]  NVARCHAR (80)   NULL,
+    [AuthorAssociationMemberYesNo]  NVARCHAR (1500) NULL,
     [AuthorBiographyText]           NVARCHAR (4000) NULL,
     [AuthorBiosketchText]           NVARCHAR (4000) NULL,
     [AuthorCity]                    NVARCHAR (80)   NULL,
     [AuthorCountry]                 NVARCHAR (80)   NULL,
-    [AuthorCredentials]             NVARCHAR (80)   NULL,
+    [AuthorCredentials]             NVARCHAR (MAX)  NULL,
     [AuthorCustomField1]            NVARCHAR (80)   NULL,
     [AuthorCustomField10]           NVARCHAR (80)   NULL,
     [AuthorCustomField2]            NVARCHAR (80)   NULL,
@@ -45,7 +45,7 @@
     [AuthorPhotoHeight]             NVARCHAR (16)   NULL,
     [AuthorPhotoLocation]           NVARCHAR (208)  NULL,
     [AuthorPhotoOriginalName]       NVARCHAR (144)  NULL,
-    [AuthorPhotoSize]               NVARCHAR (80)   NULL,
+    [AuthorPhotoSize]               NVARCHAR (200)  NULL,
     [AuthorPhotoWidth]              NVARCHAR (16)   NULL,
     [AuthorPosition]                NVARCHAR (400)  NULL,
     [AuthorPrefix]                  NVARCHAR (80)   NULL,
@@ -61,4 +61,6 @@
     [AuthorWebsite]                 NVARCHAR (80)   NULL,
     [AuthorZip]                     NVARCHAR (80)   NULL
 );
+
+
 

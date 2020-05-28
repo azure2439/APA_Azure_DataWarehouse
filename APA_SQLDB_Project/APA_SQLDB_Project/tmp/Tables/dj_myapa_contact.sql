@@ -26,7 +26,7 @@
     [phone]                  VARCHAR (20)    NULL,
     [cell_phone]             VARCHAR (20)    NULL,
     [company]                VARCHAR (80)    NULL,
-    [bio]                    TEXT            NULL,
+    [bio]                    VARCHAR (MAX)   NULL,
     [about_me]               TEXT            NULL,
     [personal_url]           VARCHAR (255)   NULL,
     [linkedin_url]           VARCHAR (255)   NULL,
@@ -57,4 +57,6 @@
     [zip_code_extension]     VARCHAR (4)     NULL,
     CONSTRAINT [myapa_contact_pkey] PRIMARY KEY CLUSTERED ([id] ASC)
 );
+
+
 

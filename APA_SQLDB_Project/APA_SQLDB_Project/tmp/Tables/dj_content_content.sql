@@ -16,7 +16,7 @@
     [file_path]                   VARCHAR (255)  NULL,
     [has_xhtml]                   BIT            NOT NULL,
     [publish_time]                DATETIME       NULL,
-    [archive_time]                DATETIME       NULL,
+    [archive_time]                VARCHAR (50)   NULL,
     [abstract]                    TEXT           NULL,
     [resource_type]               VARCHAR (50)   NULL,
     [volume_number]               INT            NULL,
@@ -64,4 +64,6 @@
     [og_url]                      VARCHAR (255)  NULL,
     CONSTRAINT [content_content_pkey] PRIMARY KEY CLUSTERED ([id] ASC)
 );
+
+
 

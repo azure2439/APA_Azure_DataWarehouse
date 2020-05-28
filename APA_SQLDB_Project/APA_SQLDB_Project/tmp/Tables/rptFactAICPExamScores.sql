@@ -1,0 +1,25 @@
+﻿CREATE TABLE [tmp].[rptFactAICPExamScores] (
+    [MemberIDKey]             INT          NOT NULL,
+    [SEQN]                    INT          NOT NULL,
+    [ExamIDKey]               INT          NOT NULL,
+    [RegistrantTypeIDKey]     INT          NOT NULL,
+    [MemberTypeIDKey]         INT          NOT NULL,
+    [ChapterKey]              INT          NOT NULL,
+    [SalaryIDKey]             INT          NOT NULL,
+    [RaceIDKey]               INT          NOT NULL,
+    [StatusKey]               INT          NOT NULL,
+    [MemberStatusKey]         INT          NOT NULL,
+    [AddressNum1Key]          INT          NULL,
+    [AddressNum2Key]          INT          NOT NULL,
+    [ScaledScore]             INT          NOT NULL,
+    [RawScore]                INT          NULL,
+    [Section_AreasOfPractice] INT          NOT NULL,
+    [Section_PlanMaking]      INT          NOT NULL,
+    [Section_PlanKnowledge]   INT          NOT NULL,
+    [Section_CodeOfEthics]    INT          NOT NULL,
+    [Section_Leadership]      INT          NOT NULL,
+    [Pass]                    INT          NOT NULL,
+    [LastUpdatedBy]           VARCHAR (40) DEFAULT (suser_sname()) NULL,
+    [LastModified]            DATETIME     DEFAULT (getdate()) NULL
+);
+

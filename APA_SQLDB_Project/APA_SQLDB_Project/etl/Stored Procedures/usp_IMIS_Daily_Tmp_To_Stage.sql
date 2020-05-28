@@ -2,7 +2,7 @@
 
 
 /*******************************************************************************************************************************
- Description:   This Stored Procedure merges data from the temp tables into the staging tables on a daily basis. These tables 
+ Description:   This Stored Procedure merges data from the iMIS temp tables into the staging tables on a daily basis. These tables 
 				have been identified to be incrementally merged on a daily basis. 
  				
 
@@ -208,7 +208,27 @@ WHERE ID IN (
 
 			  Truncate TABLE #audittemp
 
+--  Below process will delete any duplicate records that got inserted from the previous step which is possible if a Member ID has a new degree
+--  and a changed degree on the same day
 
+;with cte as
+(select ID, SEQN, IS_CURRENT, count(*) as ttlcount 
+from stg.imis_Custom_Degree
+where IsActive = 1 and IS_CURRENT = 1
+group by ID, SEQN, IS_CURRENT
+having count(*) > 1
+)
+
+, cte2 as
+(
+select ID, SEQN, IS_CURRENT, min(Id_Identitycolumn) as identityval from stg.imis_Custom_Degree A where isactive = 1 and exists
+(Select * from cte B where A.ID = B.ID and A.SEQN = B.SEQN and A.IS_CURRENT = B.IS_CURRENT
+)
+group by ID, SEQN, IS_CURRENT
+)
+
+delete from stg.imis_Custom_Degree  where Id_Identitycolumn in
+(Select identityval from cte2)
 
 
 /********************************************************Custom_AICP_Exam_Score*******************************************/
@@ -2457,6 +2477,33 @@ WHERE ID IN (
 
 			  Truncate TABLE #audittemp
 
+--  Below process will delete any duplicate records that got inserted from the previous step which is possible if a Member ID has a new Subscription
+--  and a changed subscription on the same day
+
+;with cte as
+(select ID, product_code, status, paid_thru, count(*) as ttlcount from stg.imis_Subscriptions   where IsActive = 1
+group by ID, product_code, status, paid_thru
+having count(*) > 1
+)
+
+, cte2 as
+(
+select ID, product_code, status, paid_thru, min(id_identity) as identityval from stg.imis_Subscriptions A where isactive = 1 and exists
+(Select * from cte B where A.ID = B.ID and A.PRODUCT_CODE = B.PRODUCT_CODE and A.status = B.STATUS
+and  A.PAID_THRU is null and B.PAID_THRU is null)
+group by ID, product_code, status, paid_thru
+union 
+select ID, product_code, status, paid_thru, min(id_identity) as identityval from stg.imis_Subscriptions A where isactive = 1 and exists
+(Select * from cte B where A.ID = B.ID and A.PRODUCT_CODE = B.PRODUCT_CODE and A.status = B.STATUS
+and  A.PAID_THRU = B.PAID_THRU 
+)
+group by ID, product_code, status, paid_thru
+)
+
+delete from stg.imis_Subscriptions  where Id_Identity in
+(Select identityval from cte2)
+
+
 
 
 /*****************************************************************NAME_ADDRESS*************************************************************************/
@@ -3462,6 +3509,1888 @@ VALUES (
        ,getdate()
        )
 
+	    Truncate TABLE #audittemp
+
+	   /********************Meet Reg Class************/
+--MERGE stg.imis_meet_reg_class AS DST
+--USING tmp.imis_meet_reg_class AS SRC
+--       ON DST.registrant_class = SRC.registrant_class
+--WHEN MATCHED
+--              AND DST.IsActive = 1
+--              AND (
+                   
+--                     ISNULL(DST.description, '') <> ISNULL(SRC.description, '')
+--                     OR ISNULL(DST.long_description, '') <> ISNULL(SRC.long_description, '')
+              
+--                     )
+--              -- Update statement for a changed dimension record, to flag as no longer active, only insert fields they want to track 
+--              THEN
+--                     UPDATE
+--                     SET DST.isActive = 0
+--                           ,DST.EndDate = @Yesterday
+--WHEN NOT MATCHED
+--       THEN
+--              INSERT (
+--                     [REGISTRANT_CLASS]
+--      ,[DESCRIPTION]
+--      ,[LONG_DESCRIPTION]
+--      ,[TIME_STAMP]
+--      ,[IsActive]
+--      ,[StartDate]
+          
+--                     )
+--              VALUES (
+--                     src.[REGISTRANT_CLASS]
+--      ,src.[DESCRIPTION]
+--      ,src.[LONG_DESCRIPTION]
+--      ,src.[TIME_STAMP]
+--                 ,1
+--                 ,@Today
+--                     )
+			
+
+--OUTPUT $ACTION AS action
+--       ,inserted.registrant_class
+--       ,deleted.registrant_class
+--INTO #audittemp;
+
+
+
+--INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
+--VALUES (
+--        @PipelineName
+--	   ,'tmp.imis_meet_reg_class'
+--       ,'stg.imis_meet_reg_class'
+--       ,(
+--              SELECT action_Count
+--              FROM (
+--                     SELECT action
+--                           ,count(*) AS action_count
+--                     FROM #audittemp
+--                     WHERE action = 'INSERT'
+--                     GROUP BY action
+--                     ) X
+--              )
+--       ,(
+--              SELECT action_Count
+--              FROM (
+--                     SELECT action
+--                           ,count(*) AS action_count
+--                     FROM #audittemp
+--                     WHERE action = 'UPDATE'
+--                     GROUP BY action
+--                     ) X
+--					 )
+--			 ,(select count(*) as RowsRead
+--				from tmp.imis_meet_reg_class
+--				) 
+--       ,getdate()
+--       )
+
+--INSERT INTO stg.imis_meet_reg_class (
+-- [REGISTRANT_CLASS]
+--      ,[DESCRIPTION]
+--      ,[LONG_DESCRIPTION]
+--      ,[TIME_STAMP]
+--      ,[IsActive]
+--      ,[StartDate]
+--                 )
+--select  
+--                      [REGISTRANT_CLASS]
+--      ,[DESCRIPTION]
+--      ,[LONG_DESCRIPTION]
+--           ,cast(TIME_STAMP as bigint)
+--                 ,1
+--                 ,@Today
+           
+         
+--FROM 
+--tmp.imis_meet_reg_class
+--WHERE registrant_class IN (
+--              SELECT inserted_ID
+--              FROM #audittemp
+--              WHERE action = 'UPDATE'
+--              )
+
+
+--			  Truncate TABLE #audittemp
+
+/******************Orders**************/
+MERGE stg.imis_orders AS DST
+USING tmp.imis_orders AS SRC
+       ON DST.order_number = SRC.order_number 
+WHEN MATCHED
+              AND DST.IsActive = 1
+              AND (
+ISNULL (DST.[ORG_CODE], '')	<> 	ISNULL (SRC.[ORG_CODE], '')
+OR ISNULL (DST.[ORDER_TYPE_CODE], '')	<> 	ISNULL (SRC.[ORDER_TYPE_CODE], '')
+OR ISNULL (DST.[STAGE], '')	<> 	ISNULL (SRC.[STAGE], '')
+OR ISNULL (DST.[SOURCE_SYSTEM], '')	<> 	ISNULL (SRC.[SOURCE_SYSTEM], '')
+OR ISNULL (DST.[BATCH_NUM], '')	<> 	ISNULL (SRC.[BATCH_NUM], '')
+OR ISNULL (DST.[STATUS], '')	<> 	ISNULL (SRC.[STATUS], '')
+OR ISNULL (DST.[HOLD_CODE], '')	<> 	ISNULL (SRC.[HOLD_CODE], '')
+OR ISNULL (DST.[ORDER_DATE], '')	<> 	ISNULL (SRC.[ORDER_DATE], '')
+OR ISNULL (DST.[BT_ID], '')	<> 	ISNULL (SRC.[BT_ID], '')
+OR ISNULL (DST.[ST_ID], '')	<> 	ISNULL (SRC.[ST_ID], '')
+OR ISNULL (DST.[ST_ADDRESS_NUM], '')	<> 	ISNULL (SRC.[ST_ADDRESS_NUM], '')
+OR ISNULL (DST.[ENTERED_DATE_TIME], '')	<> 	ISNULL (SRC.[ENTERED_DATE_TIME], '')
+OR ISNULL (DST.[ENTERED_BY], '')	<> 	ISNULL (SRC.[ENTERED_BY], '')
+OR ISNULL (DST.[UPDATED_DATE_TIME], '')	<> 	ISNULL (SRC.[UPDATED_DATE_TIME], '')
+OR ISNULL (DST.[UPDATED_BY], '')	<> 	ISNULL (SRC.[UPDATED_BY], '')
+OR ISNULL (DST.[INVOICE_REFERENCE_NUM], '')	<> 	ISNULL (SRC.[INVOICE_REFERENCE_NUM], '')
+OR ISNULL (DST.[INVOICE_NUMBER], '')	<> 	ISNULL (SRC.[INVOICE_NUMBER], '')
+OR ISNULL (DST.[INVOICE_DATE], '')	<> 	ISNULL (SRC.[INVOICE_DATE], '')
+OR ISNULL (DST.[NUMBER_LINES], '')	<> 	ISNULL (SRC.[NUMBER_LINES], '')
+OR ISNULL (DST.[FULL_NAME], '')	<> 	ISNULL (SRC.[FULL_NAME], '')
+OR ISNULL (DST.[TITLE], '')	<> 	ISNULL (SRC.[TITLE], '')
+OR ISNULL (DST.[COMPANY], '')	<> 	ISNULL (SRC.[COMPANY], '')
+OR ISNULL (DST.[FULL_ADDRESS], '')	<> 	ISNULL (SRC.[FULL_ADDRESS], '')
+OR ISNULL (DST.[PREFIX], '')	<> 	ISNULL (SRC.[PREFIX], '')
+OR ISNULL (DST.[FIRST_NAME], '')	<> 	ISNULL (SRC.[FIRST_NAME], '')
+OR ISNULL (DST.[MIDDLE_NAME], '')	<> 	ISNULL (SRC.[MIDDLE_NAME], '')
+OR ISNULL (DST.[LAST_NAME], '')	<> 	ISNULL (SRC.[LAST_NAME], '')
+OR ISNULL (DST.[SUFFIX], '')	<> 	ISNULL (SRC.[SUFFIX], '')
+OR ISNULL (DST.[DESIGNATION], '')	<> 	ISNULL (SRC.[DESIGNATION], '')
+OR ISNULL (DST.[INFORMAL], '')	<> 	ISNULL (SRC.[INFORMAL], '')
+OR ISNULL (DST.[LAST_FIRST], '')	<> 	ISNULL (SRC.[LAST_FIRST], '')
+OR ISNULL (DST.[COMPANY_SORT], '')	<> 	ISNULL (SRC.[COMPANY_SORT], '')
+OR ISNULL (DST.[ADDRESS_1], '')	<> 	ISNULL (SRC.[ADDRESS_1], '')
+OR ISNULL (DST.[ADDRESS_2], '')	<> 	ISNULL (SRC.[ADDRESS_2], '')
+OR ISNULL (DST.[CITY], '')	<> 	ISNULL (SRC.[CITY], '')
+OR ISNULL (DST.[STATE_PROVINCE], '')	<> 	ISNULL (SRC.[STATE_PROVINCE], '')
+OR ISNULL (DST.[ZIP], '')	<> 	ISNULL (SRC.[ZIP], '')
+OR ISNULL (DST.[COUNTRY], '')	<> 	ISNULL (SRC.[COUNTRY], '')
+OR ISNULL (DST.[DPB], '')	<> 	ISNULL (SRC.[DPB], '')
+OR ISNULL (DST.[BAR_CODE], '')	<> 	ISNULL (SRC.[BAR_CODE], '')
+OR ISNULL (DST.[ADDRESS_FORMAT], '')	<> 	ISNULL (SRC.[ADDRESS_FORMAT], '')
+OR ISNULL (DST.[PHONE], '')	<> 	ISNULL (SRC.[PHONE], '')
+OR ISNULL (DST.[FAX], '')	<> 	ISNULL (SRC.[FAX], '')
+OR ISNULL (DST.[NOTES], '')	<> 	ISNULL (SRC.[NOTES], '')
+OR ISNULL (DST.[TOTAL_CHARGES], '')	<> 	ISNULL (SRC.[TOTAL_CHARGES], '')
+OR ISNULL (DST.[TOTAL_PAYMENTS], '')	<> 	ISNULL (SRC.[TOTAL_PAYMENTS], '')
+OR ISNULL (DST.[BALANCE], '')	<> 	ISNULL (SRC.[BALANCE], '')
+OR ISNULL (DST.[LINE_TOTAL], '')	<> 	ISNULL (SRC.[LINE_TOTAL], '')
+OR ISNULL (DST.[LINE_TAXABLE], '')	<> 	ISNULL (SRC.[LINE_TAXABLE], '')
+OR ISNULL (DST.[FREIGHT_1], '')	<> 	ISNULL (SRC.[FREIGHT_1], '')
+OR ISNULL (DST.[FREIGHT_2], '')	<> 	ISNULL (SRC.[FREIGHT_2], '')
+OR ISNULL (DST.[HANDLING_1], '')	<> 	ISNULL (SRC.[HANDLING_1], '')
+OR ISNULL (DST.[HANDLING_2], '')	<> 	ISNULL (SRC.[HANDLING_2], '')
+OR ISNULL (DST.[CANCELLATION_FEE], '')	<> 	ISNULL (SRC.[CANCELLATION_FEE], '')
+OR ISNULL (DST.[TAX_1], '')	<> 	ISNULL (SRC.[TAX_1], '')
+OR ISNULL (DST.[TAX_2], '')	<> 	ISNULL (SRC.[TAX_2], '')
+OR ISNULL (DST.[TAX_3], '')	<> 	ISNULL (SRC.[TAX_3], '')
+OR ISNULL (DST.[LINE_PAY], '')	<> 	ISNULL (SRC.[LINE_PAY], '')
+OR ISNULL (DST.[OTHER_PAY], '')	<> 	ISNULL (SRC.[OTHER_PAY], '')
+OR ISNULL (DST.[AR_PAY], '')	<> 	ISNULL (SRC.[AR_PAY], '')
+OR ISNULL (DST.[TAX_AUTHOR_1], '')	<> 	ISNULL (SRC.[TAX_AUTHOR_1], '')
+OR ISNULL (DST.[TAX_AUTHOR_2], '')	<> 	ISNULL (SRC.[TAX_AUTHOR_2], '')
+OR ISNULL (DST.[TAX_AUTHOR_3], '')	<> 	ISNULL (SRC.[TAX_AUTHOR_3], '')
+OR ISNULL (DST.[TAX_RATE_1], 0)	<> 	ISNULL (SRC.[TAX_RATE_1], 0)
+OR ISNULL (DST.[TAX_RATE_2], 0)	<> 	ISNULL (SRC.[TAX_RATE_2], 0)
+OR ISNULL (DST.[TAX_RATE_3], 0)	<> 	ISNULL (SRC.[TAX_RATE_3], 0)
+OR ISNULL (DST.[TAX_EXEMPT], '')	<> 	ISNULL (SRC.[TAX_EXEMPT], '')
+OR ISNULL (DST.[TERMS_CODE], '')	<> 	ISNULL (SRC.[TERMS_CODE], '')
+OR ISNULL (DST.[SCHEDULED_DATE], '')	<> 	ISNULL (SRC.[SCHEDULED_DATE], '')
+OR ISNULL (DST.[CONFIRMATION_DATE_TIME], '')	<> 	ISNULL (SRC.[CONFIRMATION_DATE_TIME], '')
+OR ISNULL (DST.[SHIP_PAPERS_DATE_TIME], '')	<> 	ISNULL (SRC.[SHIP_PAPERS_DATE_TIME], '')
+OR ISNULL (DST.[SHIPPED_DATE_TIME], '')	<> 	ISNULL (SRC.[SHIPPED_DATE_TIME], '')
+OR ISNULL (DST.[BO_RELEASED_DATE_TIME], '')	<> 	ISNULL (SRC.[BO_RELEASED_DATE_TIME], '')
+OR ISNULL (DST.[SOURCE_CODE], '')	<> 	ISNULL (SRC.[SOURCE_CODE], '')
+OR ISNULL (DST.[SALESMAN], '')	<> 	ISNULL (SRC.[SALESMAN], '')
+OR ISNULL (DST.[COMMISSION_RATE], 0)	<> 	ISNULL (SRC.[COMMISSION_RATE], 0)
+OR ISNULL (DST.[DISCOUNT_RATE], 0)	<> 	ISNULL (SRC.[DISCOUNT_RATE], 0)
+OR ISNULL (DST.[PRIORITY], '')	<> 	ISNULL (SRC.[PRIORITY], '')
+OR ISNULL (DST.[HOLD_COMMENT], '')	<> 	ISNULL (SRC.[HOLD_COMMENT], '')
+OR ISNULL (DST.[AFFECT_INVENTORY], '')	<> 	ISNULL (SRC.[AFFECT_INVENTORY], '')
+OR ISNULL (DST.[HOLD_FLAG], '')	<> 	ISNULL (SRC.[HOLD_FLAG], '')
+OR ISNULL (DST.[CUSTOMER_REFERENCE], '')	<> 	ISNULL (SRC.[CUSTOMER_REFERENCE], '')
+OR ISNULL (DST.[VALUATION_BASIS], '')	<> 	ISNULL (SRC.[VALUATION_BASIS], '')
+OR ISNULL (DST.[UNDISCOUNTED_TOTAL], '')	<> 	ISNULL (SRC.[UNDISCOUNTED_TOTAL], '')
+OR ISNULL (DST.[AUTO_CALC_HANDLING], '')	<> 	ISNULL (SRC.[AUTO_CALC_HANDLING], '')
+OR ISNULL (DST.[AUTO_CALC_RESTOCKING], '')	<> 	ISNULL (SRC.[AUTO_CALC_RESTOCKING], '')
+OR ISNULL (DST.[BACKORDERS], '')	<> 	ISNULL (SRC.[BACKORDERS], '')
+OR ISNULL (DST.[MEMBER_TYPE], '')	<> 	ISNULL (SRC.[MEMBER_TYPE], '')
+OR ISNULL (DST.[PAY_TYPE], '')	<> 	ISNULL (SRC.[PAY_TYPE], '')
+OR ISNULL (DST.[PAY_NUMBER], '')	<> 	ISNULL (SRC.[PAY_NUMBER], '')
+OR ISNULL (DST.[CREDIT_CARD_EXPIRES], '')	<> 	ISNULL (SRC.[CREDIT_CARD_EXPIRES], '')
+OR ISNULL (DST.[AUTHORIZE], '')	<> 	ISNULL (SRC.[AUTHORIZE], '')
+OR ISNULL (DST.[CREDIT_CARD_NAME], '')	<> 	ISNULL (SRC.[CREDIT_CARD_NAME], '')
+OR ISNULL (DST.[BO_STATUS], '')	<> 	ISNULL (SRC.[BO_STATUS], '')
+OR ISNULL (DST.[BO_RELEASE_DATE], '')	<> 	ISNULL (SRC.[BO_RELEASE_DATE], '')
+OR ISNULL (DST.[TOTAL_QUANTITY_ORDERED], 0)	<> 	ISNULL (SRC.[TOTAL_QUANTITY_ORDERED], 0)
+OR ISNULL (DST.[TOTAL_QUANTITY_BACKORDERED], 0)	<> 	ISNULL (SRC.[TOTAL_QUANTITY_BACKORDERED], 0)
+OR ISNULL (DST.[SHIP_METHOD], '')	<> 	ISNULL (SRC.[SHIP_METHOD], '')
+OR ISNULL (DST.[TOTAL_WEIGHT], '')	<> 	ISNULL (SRC.[TOTAL_WEIGHT], '')
+OR ISNULL (DST.[CASH_GL_ACCT], '')	<> 	ISNULL (SRC.[CASH_GL_ACCT], '')
+OR ISNULL (DST.[LINE_PST_TAXABLE], '')	<> 	ISNULL (SRC.[LINE_PST_TAXABLE], '')
+OR ISNULL (DST.[INTENT_TO_EDIT], '')	<> 	ISNULL (SRC.[INTENT_TO_EDIT], '')
+OR ISNULL (DST.[PREPAID_INVOICE_REFERENCE_NUM], '')	<> 	ISNULL (SRC.[PREPAID_INVOICE_REFERENCE_NUM], '')
+OR ISNULL (DST.[AUTO_CALC_FREIGHT], '')	<> 	ISNULL (SRC.[AUTO_CALC_FREIGHT], '')
+OR ISNULL (DST.[CO_ID], '')	<> 	ISNULL (SRC.[CO_ID], '')
+OR ISNULL (DST.[CO_MEMBER_TYPE], '')	<> 	ISNULL (SRC.[CO_MEMBER_TYPE], '')
+OR ISNULL (DST.[EMAIL], '')	<> 	ISNULL (SRC.[EMAIL], '')
+OR ISNULL (DST.[CRRT], '')	<> 	ISNULL (SRC.[CRRT], '')
+OR ISNULL (DST.[ADDRESS_STATUS], '')	<> 	ISNULL (SRC.[ADDRESS_STATUS], '')
+OR ISNULL (DST.[RECOGNIZED_CASH_AMOUNT], '')	<> 	ISNULL (SRC.[RECOGNIZED_CASH_AMOUNT], '')
+OR ISNULL (DST.[IS_FR_ORDER], '')	<> 	ISNULL (SRC.[IS_FR_ORDER], '')
+OR ISNULL (DST.[VAT_TAX_CODE_FH], '')	<> 	ISNULL (SRC.[VAT_TAX_CODE_FH], '')
+OR ISNULL (DST.[ENCRYPT_PAY_NUMBER], '')	<> 	ISNULL (SRC.[ENCRYPT_PAY_NUMBER], '')
+OR ISNULL (DST.[ENCRYPT_CREDIT_CARD_EXPIRES], '')	<> 	ISNULL (SRC.[ENCRYPT_CREDIT_CARD_EXPIRES], '')
+OR ISNULL (DST.[AUTO_FREIGHT_TYPE], '')	<> 	ISNULL (SRC.[AUTO_FREIGHT_TYPE], '')
+OR ISNULL (DST.[USE_MEMBER_PRICE], '')	<> 	ISNULL (SRC.[USE_MEMBER_PRICE], '')
+OR ISNULL (DST.[ST_PRINT_COMPANY], '')	<> 	ISNULL (SRC.[ST_PRINT_COMPANY], '')
+OR ISNULL (DST.[ST_PRINT_TITLE], '')	<> 	ISNULL (SRC.[ST_PRINT_TITLE], '')
+OR ISNULL (DST.[TOLL_FREE], '')	<> 	ISNULL (SRC.[TOLL_FREE], '')
+OR ISNULL (DST.[MAIL_CODE], '')	<> 	ISNULL (SRC.[MAIL_CODE], '')
+OR ISNULL (DST.[ADDRESS_3], '')	<> 	ISNULL (SRC.[ADDRESS_3], '')
+OR ISNULL (DST.[ENCRYPT_CSC], '')	<> 	ISNULL (SRC.[ENCRYPT_CSC], '')
+OR ISNULL (DST.[ISSUE_DATE], '')	<> 	ISNULL (SRC.[ISSUE_DATE], '')
+OR ISNULL (DST.[ISSUE_NUMBER], '')	<> 	ISNULL (SRC.[ISSUE_NUMBER], '')
+OR ISNULL (DST.[MORE_PAYMENTS], 0)	<> 	ISNULL (SRC.[MORE_PAYMENTS], 0)
+OR ISNULL (DST.[GATEWAY_REF], '')	<> 	ISNULL (SRC.[GATEWAY_REF], '')
+OR ISNULL (DST.[ORIGINATING_TRANS_NUM], '')	<> 	ISNULL (SRC.[ORIGINATING_TRANS_NUM], '')
+OR ISNULL (DST.[FREIGHT_TAX], '')	<> 	ISNULL (SRC.[FREIGHT_TAX], '')
+OR ISNULL (DST.[HANDLING_TAX], '')	<> 	ISNULL (SRC.[HANDLING_TAX], '')
+OR ISNULL (DST.[TAX_RATE_FH], 0)	<> 	ISNULL (SRC.[TAX_RATE_FH], 0)
+OR ISNULL (DST.[DISCOUNT_CODE], '')	<> 	ISNULL (SRC.[DISCOUNT_CODE], '')
+  
+                     )
+              -- Update statement for a changed dimension record, to flag as no longer active, only insert fields they want to track 
+              THEN
+                     UPDATE
+                     SET DST.isActive = 0
+                           ,DST.EndDate = @Yesterday
+WHEN NOT MATCHED
+       THEN
+              INSERT (
+                    [ORDER_NUMBER]
+      ,[ORG_CODE]
+      ,[ORDER_TYPE_CODE]
+      ,[STAGE]
+      ,[SOURCE_SYSTEM]
+      ,[BATCH_NUM]
+      ,[STATUS]
+      ,[HOLD_CODE]
+      ,[ORDER_DATE]
+      ,[BT_ID]
+      ,[ST_ID]
+      ,[ST_ADDRESS_NUM]
+      ,[ENTERED_DATE_TIME]
+      ,[ENTERED_BY]
+      ,[UPDATED_DATE_TIME]
+      ,[UPDATED_BY]
+      ,[INVOICE_REFERENCE_NUM]
+      ,[INVOICE_NUMBER]
+      ,[INVOICE_DATE]
+      ,[NUMBER_LINES]
+      ,[FULL_NAME]
+      ,[TITLE]
+      ,[COMPANY]
+      ,[FULL_ADDRESS]
+      ,[PREFIX]
+      ,[FIRST_NAME]
+      ,[MIDDLE_NAME]
+      ,[LAST_NAME]
+      ,[SUFFIX]
+      ,[DESIGNATION]
+      ,[INFORMAL]
+      ,[LAST_FIRST]
+      ,[COMPANY_SORT]
+      ,[ADDRESS_1]
+      ,[ADDRESS_2]
+      ,[CITY]
+      ,[STATE_PROVINCE]
+      ,[ZIP]
+      ,[COUNTRY]
+      ,[DPB]
+      ,[BAR_CODE]
+      ,[ADDRESS_FORMAT]
+      ,[PHONE]
+      ,[FAX]
+      ,[NOTES]
+      ,[TOTAL_CHARGES]
+      ,[TOTAL_PAYMENTS]
+      ,[BALANCE]
+      ,[LINE_TOTAL]
+      ,[LINE_TAXABLE]
+      ,[FREIGHT_1]
+      ,[FREIGHT_2]
+      ,[HANDLING_1]
+      ,[HANDLING_2]
+      ,[CANCELLATION_FEE]
+      ,[TAX_1]
+      ,[TAX_2]
+      ,[TAX_3]
+      ,[LINE_PAY]
+      ,[OTHER_PAY]
+      ,[AR_PAY]
+      ,[TAX_AUTHOR_1]
+      ,[TAX_AUTHOR_2]
+      ,[TAX_AUTHOR_3]
+      ,[TAX_RATE_1]
+      ,[TAX_RATE_2]
+      ,[TAX_RATE_3]
+      ,[TAX_EXEMPT]
+      ,[TERMS_CODE]
+      ,[SCHEDULED_DATE]
+      ,[CONFIRMATION_DATE_TIME]
+      ,[SHIP_PAPERS_DATE_TIME]
+      ,[SHIPPED_DATE_TIME]
+      ,[BO_RELEASED_DATE_TIME]
+      ,[SOURCE_CODE]
+      ,[SALESMAN]
+      ,[COMMISSION_RATE]
+      ,[DISCOUNT_RATE]
+      ,[PRIORITY]
+      ,[HOLD_COMMENT]
+      ,[AFFECT_INVENTORY]
+      ,[HOLD_FLAG]
+      ,[CUSTOMER_REFERENCE]
+      ,[VALUATION_BASIS]
+      ,[UNDISCOUNTED_TOTAL]
+      ,[AUTO_CALC_HANDLING]
+      ,[AUTO_CALC_RESTOCKING]
+      ,[BACKORDERS]
+      ,[MEMBER_TYPE]
+      ,[PAY_TYPE]
+      ,[PAY_NUMBER]
+      ,[CREDIT_CARD_EXPIRES]
+      ,[AUTHORIZE]
+      ,[CREDIT_CARD_NAME]
+      ,[BO_STATUS]
+      ,[BO_RELEASE_DATE]
+      ,[TOTAL_QUANTITY_ORDERED]
+      ,[TOTAL_QUANTITY_BACKORDERED]
+      ,[SHIP_METHOD]
+      ,[TOTAL_WEIGHT]
+      ,[CASH_GL_ACCT]
+      ,[LINE_PST_TAXABLE]
+      ,[INTENT_TO_EDIT]
+      ,[PREPAID_INVOICE_REFERENCE_NUM]
+      ,[AUTO_CALC_FREIGHT]
+      ,[CO_ID]
+      ,[CO_MEMBER_TYPE]
+      ,[EMAIL]
+      ,[CRRT]
+      ,[ADDRESS_STATUS]
+      ,[RECOGNIZED_CASH_AMOUNT]
+      ,[IS_FR_ORDER]
+      ,[VAT_TAX_CODE_FH]
+      ,[ENCRYPT_PAY_NUMBER]
+      ,[ENCRYPT_CREDIT_CARD_EXPIRES]
+      ,[AUTO_FREIGHT_TYPE]
+      ,[USE_MEMBER_PRICE]
+      ,[ST_PRINT_COMPANY]
+      ,[ST_PRINT_TITLE]
+      ,[TOLL_FREE]
+      ,[MAIL_CODE]
+      ,[ADDRESS_3]
+      ,[ENCRYPT_CSC]
+      ,[ISSUE_DATE]
+      ,[ISSUE_NUMBER]
+      ,[MORE_PAYMENTS]
+      ,[GATEWAY_REF]
+      ,[ORIGINATING_TRANS_NUM]
+      ,[FREIGHT_TAX]
+      ,[HANDLING_TAX]
+      ,[TAX_RATE_FH]
+      ,[DISCOUNT_CODE]
+      ,[TIME_STAMP]
+      ,[IsActive]
+      ,[StartDate]
+          
+                     )
+              VALUES (
+                     SRC.[ORDER_NUMBER]
+      ,SRC.[ORG_CODE]
+      ,SRC.[ORDER_TYPE_CODE]
+      ,SRC.[STAGE]
+      ,SRC.[SOURCE_SYSTEM]
+      ,SRC.[BATCH_NUM]
+      ,SRC.[STATUS]
+      ,SRC.[HOLD_CODE]
+      ,SRC.[ORDER_DATE]
+      ,SRC.[BT_ID]
+      ,SRC.[ST_ID]
+      ,SRC.[ST_ADDRESS_NUM]
+      ,SRC.[ENTERED_DATE_TIME]
+      ,SRC.[ENTERED_BY]
+      ,SRC.[UPDATED_DATE_TIME]
+      ,SRC.[UPDATED_BY]
+      ,SRC.[INVOICE_REFERENCE_NUM]
+      ,SRC.[INVOICE_NUMBER]
+      ,SRC.[INVOICE_DATE]
+      ,SRC.[NUMBER_LINES]
+      ,SRC.[FULL_NAME]
+      ,SRC.[TITLE]
+      ,SRC.[COMPANY]
+      ,SRC.[FULL_ADDRESS]
+      ,SRC.[PREFIX]
+      ,SRC.[FIRST_NAME]
+      ,SRC.[MIDDLE_NAME]
+      ,SRC.[LAST_NAME]
+      ,SRC.[SUFFIX]
+      ,SRC.[DESIGNATION]
+      ,SRC.[INFORMAL]
+      ,SRC.[LAST_FIRST]
+      ,SRC.[COMPANY_SORT]
+      ,SRC.[ADDRESS_1]
+      ,SRC.[ADDRESS_2]
+      ,SRC.[CITY]
+      ,SRC.[STATE_PROVINCE]
+      ,SRC.[ZIP]
+      ,SRC.[COUNTRY]
+      ,SRC.[DPB]
+      ,SRC.[BAR_CODE]
+      ,SRC.[ADDRESS_FORMAT]
+      ,SRC.[PHONE]
+      ,SRC.[FAX]
+      ,SRC.[NOTES]
+      ,SRC.[TOTAL_CHARGES]
+      ,SRC.[TOTAL_PAYMENTS]
+      ,SRC.[BALANCE]
+      ,SRC.[LINE_TOTAL]
+      ,SRC.[LINE_TAXABLE]
+      ,SRC.[FREIGHT_1]
+      ,SRC.[FREIGHT_2]
+      ,SRC.[HANDLING_1]
+      ,SRC.[HANDLING_2]
+      ,SRC.[CANCELLATION_FEE]
+      ,SRC.[TAX_1]
+      ,SRC.[TAX_2]
+      ,SRC.[TAX_3]
+      ,SRC.[LINE_PAY]
+      ,SRC.[OTHER_PAY]
+      ,SRC.[AR_PAY]
+      ,SRC.[TAX_AUTHOR_1]
+      ,SRC.[TAX_AUTHOR_2]
+      ,SRC.[TAX_AUTHOR_3]
+      ,SRC.[TAX_RATE_1]
+      ,SRC.[TAX_RATE_2]
+      ,SRC.[TAX_RATE_3]
+      ,SRC.[TAX_EXEMPT]
+      ,SRC.[TERMS_CODE]
+      ,SRC.[SCHEDULED_DATE]
+      ,SRC.[CONFIRMATION_DATE_TIME]
+      ,SRC.[SHIP_PAPERS_DATE_TIME]
+      ,SRC.[SHIPPED_DATE_TIME]
+      ,SRC.[BO_RELEASED_DATE_TIME]
+      ,SRC.[SOURCE_CODE]
+      ,SRC.[SALESMAN]
+      ,SRC.[COMMISSION_RATE]
+      ,SRC.[DISCOUNT_RATE]
+      ,SRC.[PRIORITY]
+      ,SRC.[HOLD_COMMENT]
+      ,SRC.[AFFECT_INVENTORY]
+      ,SRC.[HOLD_FLAG]
+      ,SRC.[CUSTOMER_REFERENCE]
+      ,SRC.[VALUATION_BASIS]
+      ,SRC.[UNDISCOUNTED_TOTAL]
+      ,SRC.[AUTO_CALC_HANDLING]
+      ,SRC.[AUTO_CALC_RESTOCKING]
+      ,SRC.[BACKORDERS]
+      ,SRC.[MEMBER_TYPE]
+      ,SRC.[PAY_TYPE]
+      ,SRC.[PAY_NUMBER]
+      ,SRC.[CREDIT_CARD_EXPIRES]
+      ,SRC.[AUTHORIZE]
+      ,SRC.[CREDIT_CARD_NAME]
+      ,SRC.[BO_STATUS]
+      ,SRC.[BO_RELEASE_DATE]
+      ,SRC.[TOTAL_QUANTITY_ORDERED]
+      ,SRC.[TOTAL_QUANTITY_BACKORDERED]
+      ,SRC.[SHIP_METHOD]
+      ,SRC.[TOTAL_WEIGHT]
+      ,SRC.[CASH_GL_ACCT]
+      ,SRC.[LINE_PST_TAXABLE]
+      ,SRC.[INTENT_TO_EDIT]
+      ,SRC.[PREPAID_INVOICE_REFERENCE_NUM]
+      ,SRC.[AUTO_CALC_FREIGHT]
+      ,SRC.[CO_ID]
+      ,SRC.[CO_MEMBER_TYPE]
+      ,SRC.[EMAIL]
+      ,SRC.[CRRT]
+      ,SRC.[ADDRESS_STATUS]
+      ,SRC.[RECOGNIZED_CASH_AMOUNT]
+      ,SRC.[IS_FR_ORDER]
+      ,SRC.[VAT_TAX_CODE_FH]
+      ,SRC.[ENCRYPT_PAY_NUMBER]
+      ,SRC.[ENCRYPT_CREDIT_CARD_EXPIRES]
+      ,SRC.[AUTO_FREIGHT_TYPE]
+      ,SRC.[USE_MEMBER_PRICE]
+      ,SRC.[ST_PRINT_COMPANY]
+      ,SRC.[ST_PRINT_TITLE]
+      ,SRC.[TOLL_FREE]
+      ,SRC.[MAIL_CODE]
+      ,SRC.[ADDRESS_3]
+      ,SRC.[ENCRYPT_CSC]
+      ,SRC.[ISSUE_DATE]
+      ,SRC.[ISSUE_NUMBER]
+      ,SRC.[MORE_PAYMENTS]
+      ,SRC.[GATEWAY_REF]
+      ,SRC.[ORIGINATING_TRANS_NUM]
+      ,SRC.[FREIGHT_TAX]
+      ,SRC.[HANDLING_TAX]
+      ,SRC.[TAX_RATE_FH]
+      ,SRC.[DISCOUNT_CODE]
+      ,SRC.[TIME_STAMP]
+                 ,1
+                 ,@Today
+                     )
+			
+
+OUTPUT $ACTION AS action
+       ,inserted.ORDER_NUMBER
+       ,deleted.ORDER_NUMBER
+INTO #audittemp;
+
+
+
+INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
+VALUES (
+        @PipelineName
+	   ,'tmp.imis_Orders'
+       ,'stg.imis_Orders'
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'INSERT'
+                     GROUP BY action
+                     ) X
+              )
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'UPDATE'
+                     GROUP BY action
+                     ) X
+					 )
+			 ,(select count(*) as RowsRead
+				from tmp.imis_Orders
+				) 
+       ,getdate()
+       )
+
+INSERT INTO stg.imis_Orders (
+[ORDER_NUMBER]
+      ,[ORG_CODE]
+      ,[ORDER_TYPE_CODE]
+      ,[STAGE]
+      ,[SOURCE_SYSTEM]
+      ,[BATCH_NUM]
+      ,[STATUS]
+      ,[HOLD_CODE]
+      ,[ORDER_DATE]
+      ,[BT_ID]
+      ,[ST_ID]
+      ,[ST_ADDRESS_NUM]
+      ,[ENTERED_DATE_TIME]
+      ,[ENTERED_BY]
+      ,[UPDATED_DATE_TIME]
+      ,[UPDATED_BY]
+      ,[INVOICE_REFERENCE_NUM]
+      ,[INVOICE_NUMBER]
+      ,[INVOICE_DATE]
+      ,[NUMBER_LINES]
+      ,[FULL_NAME]
+      ,[TITLE]
+      ,[COMPANY]
+      ,[FULL_ADDRESS]
+      ,[PREFIX]
+      ,[FIRST_NAME]
+      ,[MIDDLE_NAME]
+      ,[LAST_NAME]
+      ,[SUFFIX]
+      ,[DESIGNATION]
+      ,[INFORMAL]
+      ,[LAST_FIRST]
+      ,[COMPANY_SORT]
+      ,[ADDRESS_1]
+      ,[ADDRESS_2]
+      ,[CITY]
+      ,[STATE_PROVINCE]
+      ,[ZIP]
+      ,[COUNTRY]
+      ,[DPB]
+      ,[BAR_CODE]
+      ,[ADDRESS_FORMAT]
+      ,[PHONE]
+      ,[FAX]
+      ,[NOTES]
+      ,[TOTAL_CHARGES]
+      ,[TOTAL_PAYMENTS]
+      ,[BALANCE]
+      ,[LINE_TOTAL]
+      ,[LINE_TAXABLE]
+      ,[FREIGHT_1]
+      ,[FREIGHT_2]
+      ,[HANDLING_1]
+      ,[HANDLING_2]
+      ,[CANCELLATION_FEE]
+      ,[TAX_1]
+      ,[TAX_2]
+      ,[TAX_3]
+      ,[LINE_PAY]
+      ,[OTHER_PAY]
+      ,[AR_PAY]
+      ,[TAX_AUTHOR_1]
+      ,[TAX_AUTHOR_2]
+      ,[TAX_AUTHOR_3]
+      ,[TAX_RATE_1]
+      ,[TAX_RATE_2]
+      ,[TAX_RATE_3]
+      ,[TAX_EXEMPT]
+      ,[TERMS_CODE]
+      ,[SCHEDULED_DATE]
+      ,[CONFIRMATION_DATE_TIME]
+      ,[SHIP_PAPERS_DATE_TIME]
+      ,[SHIPPED_DATE_TIME]
+      ,[BO_RELEASED_DATE_TIME]
+      ,[SOURCE_CODE]
+      ,[SALESMAN]
+      ,[COMMISSION_RATE]
+      ,[DISCOUNT_RATE]
+      ,[PRIORITY]
+      ,[HOLD_COMMENT]
+      ,[AFFECT_INVENTORY]
+      ,[HOLD_FLAG]
+      ,[CUSTOMER_REFERENCE]
+      ,[VALUATION_BASIS]
+      ,[UNDISCOUNTED_TOTAL]
+      ,[AUTO_CALC_HANDLING]
+      ,[AUTO_CALC_RESTOCKING]
+      ,[BACKORDERS]
+      ,[MEMBER_TYPE]
+      ,[PAY_TYPE]
+      ,[PAY_NUMBER]
+      ,[CREDIT_CARD_EXPIRES]
+      ,[AUTHORIZE]
+      ,[CREDIT_CARD_NAME]
+      ,[BO_STATUS]
+      ,[BO_RELEASE_DATE]
+      ,[TOTAL_QUANTITY_ORDERED]
+      ,[TOTAL_QUANTITY_BACKORDERED]
+      ,[SHIP_METHOD]
+      ,[TOTAL_WEIGHT]
+      ,[CASH_GL_ACCT]
+      ,[LINE_PST_TAXABLE]
+      ,[INTENT_TO_EDIT]
+      ,[PREPAID_INVOICE_REFERENCE_NUM]
+      ,[AUTO_CALC_FREIGHT]
+      ,[CO_ID]
+      ,[CO_MEMBER_TYPE]
+      ,[EMAIL]
+      ,[CRRT]
+      ,[ADDRESS_STATUS]
+      ,[RECOGNIZED_CASH_AMOUNT]
+      ,[IS_FR_ORDER]
+      ,[VAT_TAX_CODE_FH]
+      ,[ENCRYPT_PAY_NUMBER]
+      ,[ENCRYPT_CREDIT_CARD_EXPIRES]
+      ,[AUTO_FREIGHT_TYPE]
+      ,[USE_MEMBER_PRICE]
+      ,[ST_PRINT_COMPANY]
+      ,[ST_PRINT_TITLE]
+      ,[TOLL_FREE]
+      ,[MAIL_CODE]
+      ,[ADDRESS_3]
+      ,[ENCRYPT_CSC]
+      ,[ISSUE_DATE]
+      ,[ISSUE_NUMBER]
+      ,[MORE_PAYMENTS]
+      ,[GATEWAY_REF]
+      ,[ORIGINATING_TRANS_NUM]
+      ,[FREIGHT_TAX]
+      ,[HANDLING_TAX]
+      ,[TAX_RATE_FH]
+      ,[DISCOUNT_CODE]
+      ,[TIME_STAMP]
+      ,[IsActive]
+      ,[StartDate]
+                 )
+select  
+                     [ORDER_NUMBER]
+      ,[ORG_CODE]
+      ,[ORDER_TYPE_CODE]
+      ,[STAGE]
+      ,[SOURCE_SYSTEM]
+      ,[BATCH_NUM]
+      ,[STATUS]
+      ,[HOLD_CODE]
+      ,[ORDER_DATE]
+      ,[BT_ID]
+      ,[ST_ID]
+      ,[ST_ADDRESS_NUM]
+      ,[ENTERED_DATE_TIME]
+      ,[ENTERED_BY]
+      ,[UPDATED_DATE_TIME]
+      ,[UPDATED_BY]
+      ,[INVOICE_REFERENCE_NUM]
+      ,[INVOICE_NUMBER]
+      ,[INVOICE_DATE]
+      ,[NUMBER_LINES]
+      ,[FULL_NAME]
+      ,[TITLE]
+      ,[COMPANY]
+      ,[FULL_ADDRESS]
+      ,[PREFIX]
+      ,[FIRST_NAME]
+      ,[MIDDLE_NAME]
+      ,[LAST_NAME]
+      ,[SUFFIX]
+      ,[DESIGNATION]
+      ,[INFORMAL]
+      ,[LAST_FIRST]
+      ,[COMPANY_SORT]
+      ,[ADDRESS_1]
+      ,[ADDRESS_2]
+      ,[CITY]
+      ,[STATE_PROVINCE]
+      ,[ZIP]
+      ,[COUNTRY]
+      ,[DPB]
+      ,[BAR_CODE]
+      ,[ADDRESS_FORMAT]
+      ,[PHONE]
+      ,[FAX]
+      ,[NOTES]
+      ,[TOTAL_CHARGES]
+      ,[TOTAL_PAYMENTS]
+      ,[BALANCE]
+      ,[LINE_TOTAL]
+      ,[LINE_TAXABLE]
+      ,[FREIGHT_1]
+      ,[FREIGHT_2]
+      ,[HANDLING_1]
+      ,[HANDLING_2]
+      ,[CANCELLATION_FEE]
+      ,[TAX_1]
+      ,[TAX_2]
+      ,[TAX_3]
+      ,[LINE_PAY]
+      ,[OTHER_PAY]
+      ,[AR_PAY]
+      ,[TAX_AUTHOR_1]
+      ,[TAX_AUTHOR_2]
+      ,[TAX_AUTHOR_3]
+      ,[TAX_RATE_1]
+      ,[TAX_RATE_2]
+      ,[TAX_RATE_3]
+      ,[TAX_EXEMPT]
+      ,[TERMS_CODE]
+      ,[SCHEDULED_DATE]
+      ,[CONFIRMATION_DATE_TIME]
+      ,[SHIP_PAPERS_DATE_TIME]
+      ,[SHIPPED_DATE_TIME]
+      ,[BO_RELEASED_DATE_TIME]
+      ,[SOURCE_CODE]
+      ,[SALESMAN]
+      ,[COMMISSION_RATE]
+      ,[DISCOUNT_RATE]
+      ,[PRIORITY]
+      ,[HOLD_COMMENT]
+      ,[AFFECT_INVENTORY]
+      ,[HOLD_FLAG]
+      ,[CUSTOMER_REFERENCE]
+      ,[VALUATION_BASIS]
+      ,[UNDISCOUNTED_TOTAL]
+      ,[AUTO_CALC_HANDLING]
+      ,[AUTO_CALC_RESTOCKING]
+      ,[BACKORDERS]
+      ,[MEMBER_TYPE]
+      ,[PAY_TYPE]
+      ,[PAY_NUMBER]
+      ,[CREDIT_CARD_EXPIRES]
+      ,[AUTHORIZE]
+      ,[CREDIT_CARD_NAME]
+      ,[BO_STATUS]
+      ,[BO_RELEASE_DATE]
+      ,[TOTAL_QUANTITY_ORDERED]
+      ,[TOTAL_QUANTITY_BACKORDERED]
+      ,[SHIP_METHOD]
+      ,[TOTAL_WEIGHT]
+      ,[CASH_GL_ACCT]
+      ,[LINE_PST_TAXABLE]
+      ,[INTENT_TO_EDIT]
+      ,[PREPAID_INVOICE_REFERENCE_NUM]
+      ,[AUTO_CALC_FREIGHT]
+      ,[CO_ID]
+      ,[CO_MEMBER_TYPE]
+      ,[EMAIL]
+      ,[CRRT]
+      ,[ADDRESS_STATUS]
+      ,[RECOGNIZED_CASH_AMOUNT]
+      ,[IS_FR_ORDER]
+      ,[VAT_TAX_CODE_FH]
+      ,[ENCRYPT_PAY_NUMBER]
+      ,[ENCRYPT_CREDIT_CARD_EXPIRES]
+      ,[AUTO_FREIGHT_TYPE]
+      ,[USE_MEMBER_PRICE]
+      ,[ST_PRINT_COMPANY]
+      ,[ST_PRINT_TITLE]
+      ,[TOLL_FREE]
+      ,[MAIL_CODE]
+      ,[ADDRESS_3]
+      ,[ENCRYPT_CSC]
+      ,[ISSUE_DATE]
+      ,[ISSUE_NUMBER]
+      ,[MORE_PAYMENTS]
+      ,[GATEWAY_REF]
+      ,[ORIGINATING_TRANS_NUM]
+      ,[FREIGHT_TAX]
+      ,[HANDLING_TAX]
+      ,[TAX_RATE_FH]
+      ,[DISCOUNT_CODE]
+           ,cast(TIME_STAMP as bigint)
+                 ,1
+                 ,@Today
+           
+         
+FROM 
+tmp.imis_Orders
+WHERE order_number IN (
+              SELECT inserted_ID
+              FROM #audittemp
+              WHERE action = 'UPDATE'
+              )
+
+
+			  Truncate TABLE #audittemp
+
+
+
+/****************Order_Lines *************************/
+MERGE stg.imis_Order_Lines AS DST
+USING tmp.imis_Order_Lines AS SRC
+       ON DST.Order_Number = SRC.Order_Number and
+	   DST.Line_Number = SRC.Line_Number
+WHEN MATCHED
+              AND DST.IsActive = 1
+              AND (
+   ISNULL (DST.[PRODUCT_CODE], '')	<> 	ISNULL (SRC.[PRODUCT_CODE], '')
+OR ISNULL (DST.[LOCATION], '')	<> 	ISNULL (SRC.[LOCATION], '')
+OR ISNULL (DST.[LOT_SERIAL], '')	<> 	ISNULL (SRC.[LOT_SERIAL], '')
+OR ISNULL (DST.[DESCRIPTION], '')	<> 	ISNULL (SRC.[DESCRIPTION], '')
+OR ISNULL (DST.[QUANTITY_ORDERED], 0)	<> 	ISNULL (SRC.[QUANTITY_ORDERED], 0)
+OR ISNULL (DST.[QUANTITY_SHIPPED], 0)	<> 	ISNULL (SRC.[QUANTITY_SHIPPED], 0)
+OR ISNULL (DST.[QUANTITY_BACKORDERED], 0)	<> 	ISNULL (SRC.[QUANTITY_BACKORDERED], 0)
+OR ISNULL (DST.[QUANTITY_RESERVED], 0)	<> 	ISNULL (SRC.[QUANTITY_RESERVED], 0)
+OR ISNULL (DST.[QUANTITY_COMMITTED], 0)	<> 	ISNULL (SRC.[QUANTITY_COMMITTED], 0)
+OR ISNULL (DST.[NUMBER_DAYS], '')	<> 	ISNULL (SRC.[NUMBER_DAYS], '')
+OR ISNULL (DST.[TAXABLE], '')	<> 	ISNULL (SRC.[TAXABLE], '')
+OR ISNULL (DST.[TAXABLE_2], '')	<> 	ISNULL (SRC.[TAXABLE_2], '')
+OR ISNULL (DST.[UNIT_PRICE], '')	<> 	ISNULL (SRC.[UNIT_PRICE], '')
+OR ISNULL (DST.[UNIT_COST], '')	<> 	ISNULL (SRC.[UNIT_COST], '')
+OR ISNULL (DST.[UNDISCOUNTED_PRICE], '')	<> 	ISNULL (SRC.[UNDISCOUNTED_PRICE], '')
+OR ISNULL (DST.[EXTENDED_AMOUNT], '')	<> 	ISNULL (SRC.[EXTENDED_AMOUNT], '')
+OR ISNULL (DST.[EXTENDED_COST], '')	<> 	ISNULL (SRC.[EXTENDED_COST], '')
+OR ISNULL (DST.[UNDISCOUNTED_EXTENDED_AMOUNT], '')	<> 	ISNULL (SRC.[UNDISCOUNTED_EXTENDED_AMOUNT], '')
+OR ISNULL (DST.[CANCEL_CODE], '')	<> 	ISNULL (SRC.[CANCEL_CODE], '')
+OR ISNULL (DST.[CANCEL_QUANTITY], 0)	<> 	ISNULL (SRC.[CANCEL_QUANTITY], 0)
+OR ISNULL (DST.[COMMISSION_RATE], 0)	<> 	ISNULL (SRC.[COMMISSION_RATE], 0)
+OR ISNULL (DST.[COMMISSION_AMOUNT], '')	<> 	ISNULL (SRC.[COMMISSION_AMOUNT], '')
+OR ISNULL (DST.[CEU_TYPE], '')	<> 	ISNULL (SRC.[CEU_TYPE], '')
+OR ISNULL (DST.[CEU_AWARDED], 0)	<> 	ISNULL (SRC.[CEU_AWARDED], 0)
+OR ISNULL (DST.[PASS_FAIL], '')	<> 	ISNULL (SRC.[PASS_FAIL], '')
+OR ISNULL (DST.[DATE_CONFIRMED], '')	<> 	ISNULL (SRC.[DATE_CONFIRMED], '')
+OR ISNULL (DST.[TICKETS_PRINTED], '')	<> 	ISNULL (SRC.[TICKETS_PRINTED], '')
+OR ISNULL (DST.[BOOTH_NUMBERS], '')	<> 	ISNULL (SRC.[BOOTH_NUMBERS], '')
+OR ISNULL (DST.[NOTE], '')	<> 	ISNULL (SRC.[NOTE], '')
+OR ISNULL (DST.[INCOME_ACCOUNT], '')	<> 	ISNULL (SRC.[INCOME_ACCOUNT], '')
+OR ISNULL (DST.[UNIT_WEIGHT], 0)	<> 	ISNULL (SRC.[UNIT_WEIGHT], 0)
+OR ISNULL (DST.[EXTENDED_WEIGHT], 0)	<> 	ISNULL (SRC.[EXTENDED_WEIGHT], 0)
+OR ISNULL (DST.[PST_TAXABLE], '')	<> 	ISNULL (SRC.[PST_TAXABLE], '')
+OR ISNULL (DST.[IS_GST_TAXABLE], '')	<> 	ISNULL (SRC.[IS_GST_TAXABLE], '')
+OR ISNULL (DST.[ADDED_TO_WAIT_LIST], '')	<> 	ISNULL (SRC.[ADDED_TO_WAIT_LIST], '')
+OR ISNULL (DST.[BIN], '')	<> 	ISNULL (SRC.[BIN], '')
+OR ISNULL (DST.[TAX_AUTHORITY], '')	<> 	ISNULL (SRC.[TAX_AUTHORITY], '')
+OR ISNULL (DST.[TAX_RATE], 0)	<> 	ISNULL (SRC.[TAX_RATE], 0)
+OR ISNULL (DST.[TAX_1], 0)	<> 	ISNULL (SRC.[TAX_1], 0)
+OR ISNULL (DST.[KIT_ITEM_TYPE], '')	<> 	ISNULL (SRC.[KIT_ITEM_TYPE], '')
+OR ISNULL (DST.[DISCOUNT], 0)	<> 	ISNULL (SRC.[DISCOUNT], 0)
+OR ISNULL (DST.[UF_1], '')	<> 	ISNULL (SRC.[UF_1], '')
+OR ISNULL (DST.[UF_2], '')	<> 	ISNULL (SRC.[UF_2], '')
+OR ISNULL (DST.[UF_3], '')	<> 	ISNULL (SRC.[UF_3], '')
+OR ISNULL (DST.[UF_4], '')	<> 	ISNULL (SRC.[UF_4], '')
+OR ISNULL (DST.[EXTENDED_SQUARE_FEET], 0)	<> 	ISNULL (SRC.[EXTENDED_SQUARE_FEET], 0)
+OR ISNULL (DST.[SQUARE_FEET], 0)	<> 	ISNULL (SRC.[SQUARE_FEET], 0)
+OR ISNULL (DST.[MEET_APPEAL], '')	<> 	ISNULL (SRC.[MEET_APPEAL], '')
+OR ISNULL (DST.[MEET_CAMPAIGN], '')	<> 	ISNULL (SRC.[MEET_CAMPAIGN], '')
+OR ISNULL (DST.[FAIR_MARKET_VALUE], 0)	<> 	ISNULL (SRC.[FAIR_MARKET_VALUE], 0)
+OR ISNULL (DST.[ORG_CODE], '')	<> 	ISNULL (SRC.[ORG_CODE], '')
+OR ISNULL (DST.[IS_FR_ITEM], '')	<> 	ISNULL (SRC.[IS_FR_ITEM], '')
+OR ISNULL (DST.[MANUAL_PRICE], 0)	<> 	ISNULL (SRC.[MANUAL_PRICE], 0)
+OR ISNULL (DST.[IS_MANUAL_PRICE], '')	<> 	ISNULL (SRC.[IS_MANUAL_PRICE], '')
+OR ISNULL (DST.[UNIT_TAX_AMOUNT], 0)	<> 	ISNULL (SRC.[UNIT_TAX_AMOUNT], 0)
+OR ISNULL (DST.[PRICE_FROM_COMPONENTS], '')	<> 	ISNULL (SRC.[PRICE_FROM_COMPONENTS], '')
+OR ISNULL (DST.[QUANTITY_PER_KIT], 0)	<> 	ISNULL (SRC.[QUANTITY_PER_KIT], 0)
+OR ISNULL (DST.[DISCOUNT_CODE], '')	<> 	ISNULL (SRC.[DISCOUNT_CODE], '')
+  
+                     )
+              -- Update statement for a changed dimension record, to flag as no longer active, only insert fields they want to track 
+              THEN
+                     UPDATE
+                     SET DST.isActive = 0
+                           ,DST.EndDate = @Yesterday
+WHEN NOT MATCHED
+       THEN
+              INSERT (
+                    [ORDER_NUMBER]
+      ,[LINE_NUMBER]
+      ,[PRODUCT_CODE]
+      ,[LOCATION]
+      ,[LOT_SERIAL]
+      ,[DESCRIPTION]
+      ,[QUANTITY_ORDERED]
+      ,[QUANTITY_SHIPPED]
+      ,[QUANTITY_BACKORDERED]
+      ,[QUANTITY_RESERVED]
+      ,[QUANTITY_COMMITTED]
+      ,[NUMBER_DAYS]
+      ,[TAXABLE]
+      ,[TAXABLE_2]
+      ,[UNIT_PRICE]
+      ,[UNIT_COST]
+      ,[UNDISCOUNTED_PRICE]
+      ,[EXTENDED_AMOUNT]
+      ,[EXTENDED_COST]
+      ,[UNDISCOUNTED_EXTENDED_AMOUNT]
+      ,[CANCEL_CODE]
+      ,[CANCEL_QUANTITY]
+      ,[COMMISSION_RATE]
+      ,[COMMISSION_AMOUNT]
+      ,[CEU_TYPE]
+      ,[CEU_AWARDED]
+      ,[PASS_FAIL]
+      ,[DATE_CONFIRMED]
+      ,[TICKETS_PRINTED]
+      ,[BOOTH_NUMBERS]
+      ,[NOTE]
+      ,[INCOME_ACCOUNT]
+      ,[UNIT_WEIGHT]
+      ,[EXTENDED_WEIGHT]
+      ,[PST_TAXABLE]
+      ,[IS_GST_TAXABLE]
+      ,[ADDED_TO_WAIT_LIST]
+      ,[BIN]
+      ,[TAX_AUTHORITY]
+      ,[TAX_RATE]
+      ,[TAX_1]
+      ,[KIT_ITEM_TYPE]
+      ,[DISCOUNT]
+      ,[UF_1]
+      ,[UF_2]
+      ,[UF_3]
+      ,[UF_4]
+      ,[EXTENDED_SQUARE_FEET]
+      ,[SQUARE_FEET]
+      ,[MEET_APPEAL]
+      ,[MEET_CAMPAIGN]
+      ,[FAIR_MARKET_VALUE]
+      ,[ORG_CODE]
+      ,[IS_FR_ITEM]
+      ,[MANUAL_PRICE]
+      ,[IS_MANUAL_PRICE]
+      ,[UNIT_TAX_AMOUNT]
+      ,[PRICE_FROM_COMPONENTS]
+      ,[QUANTITY_PER_KIT]
+      ,[DISCOUNT_CODE]
+      ,[TIME_STAMP]
+      ,[IsActive]
+      ,[StartDate]
+          
+                     )
+              VALUES (
+                     SRC.[ORDER_NUMBER]
+      ,SRC.[LINE_NUMBER]
+      ,SRC.[PRODUCT_CODE]
+      ,SRC.[LOCATION]
+      ,SRC.[LOT_SERIAL]
+      ,SRC.[DESCRIPTION]
+      ,SRC.[QUANTITY_ORDERED]
+      ,SRC.[QUANTITY_SHIPPED]
+      ,SRC.[QUANTITY_BACKORDERED]
+      ,SRC.[QUANTITY_RESERVED]
+      ,SRC.[QUANTITY_COMMITTED]
+      ,SRC.[NUMBER_DAYS]
+      ,SRC.[TAXABLE]
+      ,SRC.[TAXABLE_2]
+      ,SRC.[UNIT_PRICE]
+      ,SRC.[UNIT_COST]
+      ,SRC.[UNDISCOUNTED_PRICE]
+      ,SRC.[EXTENDED_AMOUNT]
+      ,SRC.[EXTENDED_COST]
+      ,SRC.[UNDISCOUNTED_EXTENDED_AMOUNT]
+      ,SRC.[CANCEL_CODE]
+      ,SRC.[CANCEL_QUANTITY]
+      ,SRC.[COMMISSION_RATE]
+      ,SRC.[COMMISSION_AMOUNT]
+      ,SRC.[CEU_TYPE]
+      ,SRC.[CEU_AWARDED]
+      ,SRC.[PASS_FAIL]
+      ,SRC.[DATE_CONFIRMED]
+      ,SRC.[TICKETS_PRINTED]
+      ,SRC.[BOOTH_NUMBERS]
+      ,SRC.[NOTE]
+      ,SRC.[INCOME_ACCOUNT]
+      ,SRC.[UNIT_WEIGHT]
+      ,SRC.[EXTENDED_WEIGHT]
+      ,SRC.[PST_TAXABLE]
+      ,SRC.[IS_GST_TAXABLE]
+      ,SRC.[ADDED_TO_WAIT_LIST]
+      ,SRC.[BIN]
+      ,SRC.[TAX_AUTHORITY]
+      ,SRC.[TAX_RATE]
+      ,SRC.[TAX_1]
+      ,SRC.[KIT_ITEM_TYPE]
+      ,SRC.[DISCOUNT]
+      ,SRC.[UF_1]
+      ,SRC.[UF_2]
+      ,SRC.[UF_3]
+      ,SRC.[UF_4]
+      ,SRC.[EXTENDED_SQUARE_FEET]
+      ,SRC.[SQUARE_FEET]
+      ,SRC.[MEET_APPEAL]
+      ,SRC.[MEET_CAMPAIGN]
+      ,SRC.[FAIR_MARKET_VALUE]
+      ,SRC.[ORG_CODE]
+      ,SRC.[IS_FR_ITEM]
+      ,SRC.[MANUAL_PRICE]
+      ,SRC.[IS_MANUAL_PRICE]
+      ,SRC.[UNIT_TAX_AMOUNT]
+      ,SRC.[PRICE_FROM_COMPONENTS]
+      ,SRC.[QUANTITY_PER_KIT]
+      ,SRC.[DISCOUNT_CODE]
+      ,SRC.[TIME_STAMP]
+                 ,1
+                 ,@Today
+                     )
+			
+
+OUTPUT $ACTION AS action
+       ,inserted.ORDER_NUMBER
+       ,deleted.ORDER_NUMBER
+INTO #audittemp;
+
+
+
+INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
+VALUES (
+        @PipelineName
+	   ,'tmp.imis_Order_Lines'
+       ,'stg.imis_Order_Lines'
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'INSERT'
+                     GROUP BY action
+                     ) X
+              )
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'UPDATE'
+                     GROUP BY action
+                     ) X
+					 )
+			 ,(select count(*) as RowsRead
+				from tmp.imis_Order_Lines
+				) 
+       ,getdate()
+       )
+
+INSERT INTO stg.imis_Order_Lines (
+[ORDER_NUMBER]
+      ,[LINE_NUMBER]
+      ,[PRODUCT_CODE]
+      ,[LOCATION]
+      ,[LOT_SERIAL]
+      ,[DESCRIPTION]
+      ,[QUANTITY_ORDERED]
+      ,[QUANTITY_SHIPPED]
+      ,[QUANTITY_BACKORDERED]
+      ,[QUANTITY_RESERVED]
+      ,[QUANTITY_COMMITTED]
+      ,[NUMBER_DAYS]
+      ,[TAXABLE]
+      ,[TAXABLE_2]
+      ,[UNIT_PRICE]
+      ,[UNIT_COST]
+      ,[UNDISCOUNTED_PRICE]
+      ,[EXTENDED_AMOUNT]
+      ,[EXTENDED_COST]
+      ,[UNDISCOUNTED_EXTENDED_AMOUNT]
+      ,[CANCEL_CODE]
+      ,[CANCEL_QUANTITY]
+      ,[COMMISSION_RATE]
+      ,[COMMISSION_AMOUNT]
+      ,[CEU_TYPE]
+      ,[CEU_AWARDED]
+      ,[PASS_FAIL]
+      ,[DATE_CONFIRMED]
+      ,[TICKETS_PRINTED]
+      ,[BOOTH_NUMBERS]
+      ,[NOTE]
+      ,[INCOME_ACCOUNT]
+      ,[UNIT_WEIGHT]
+      ,[EXTENDED_WEIGHT]
+      ,[PST_TAXABLE]
+      ,[IS_GST_TAXABLE]
+      ,[ADDED_TO_WAIT_LIST]
+      ,[BIN]
+      ,[TAX_AUTHORITY]
+      ,[TAX_RATE]
+      ,[TAX_1]
+      ,[KIT_ITEM_TYPE]
+      ,[DISCOUNT]
+      ,[UF_1]
+      ,[UF_2]
+      ,[UF_3]
+      ,[UF_4]
+      ,[EXTENDED_SQUARE_FEET]
+      ,[SQUARE_FEET]
+      ,[MEET_APPEAL]
+      ,[MEET_CAMPAIGN]
+      ,[FAIR_MARKET_VALUE]
+      ,[ORG_CODE]
+      ,[IS_FR_ITEM]
+      ,[MANUAL_PRICE]
+      ,[IS_MANUAL_PRICE]
+      ,[UNIT_TAX_AMOUNT]
+      ,[PRICE_FROM_COMPONENTS]
+      ,[QUANTITY_PER_KIT]
+      ,[DISCOUNT_CODE]
+      ,[TIME_STAMP]
+      ,[IsActive]
+      ,[StartDate]
+                 )
+select  
+                    [ORDER_NUMBER]
+      ,[LINE_NUMBER]
+      ,[PRODUCT_CODE]
+      ,[LOCATION]
+      ,[LOT_SERIAL]
+      ,[DESCRIPTION]
+      ,[QUANTITY_ORDERED]
+      ,[QUANTITY_SHIPPED]
+      ,[QUANTITY_BACKORDERED]
+      ,[QUANTITY_RESERVED]
+      ,[QUANTITY_COMMITTED]
+      ,[NUMBER_DAYS]
+      ,[TAXABLE]
+      ,[TAXABLE_2]
+      ,[UNIT_PRICE]
+      ,[UNIT_COST]
+      ,[UNDISCOUNTED_PRICE]
+      ,[EXTENDED_AMOUNT]
+      ,[EXTENDED_COST]
+      ,[UNDISCOUNTED_EXTENDED_AMOUNT]
+      ,[CANCEL_CODE]
+      ,[CANCEL_QUANTITY]
+      ,[COMMISSION_RATE]
+      ,[COMMISSION_AMOUNT]
+      ,[CEU_TYPE]
+      ,[CEU_AWARDED]
+      ,[PASS_FAIL]
+      ,[DATE_CONFIRMED]
+      ,[TICKETS_PRINTED]
+      ,[BOOTH_NUMBERS]
+      ,[NOTE]
+      ,[INCOME_ACCOUNT]
+      ,[UNIT_WEIGHT]
+      ,[EXTENDED_WEIGHT]
+      ,[PST_TAXABLE]
+      ,[IS_GST_TAXABLE]
+      ,[ADDED_TO_WAIT_LIST]
+      ,[BIN]
+      ,[TAX_AUTHORITY]
+      ,[TAX_RATE]
+      ,[TAX_1]
+      ,[KIT_ITEM_TYPE]
+      ,[DISCOUNT]
+      ,[UF_1]
+      ,[UF_2]
+      ,[UF_3]
+      ,[UF_4]
+      ,[EXTENDED_SQUARE_FEET]
+      ,[SQUARE_FEET]
+      ,[MEET_APPEAL]
+      ,[MEET_CAMPAIGN]
+      ,[FAIR_MARKET_VALUE]
+      ,[ORG_CODE]
+      ,[IS_FR_ITEM]
+      ,[MANUAL_PRICE]
+      ,[IS_MANUAL_PRICE]
+      ,[UNIT_TAX_AMOUNT]
+      ,[PRICE_FROM_COMPONENTS]
+      ,[QUANTITY_PER_KIT]
+      ,[DISCOUNT_CODE]
+           ,cast(TIME_STAMP as bigint)
+                 ,1
+                 ,@Today
+           
+         
+FROM 
+tmp.imis_order_lines
+WHERE order_number IN (
+              SELECT inserted_ID
+              FROM #audittemp
+              WHERE action = 'UPDATE'
+              )
+
+
+			  Truncate TABLE #audittemp
+
+--  Below process will delete any duplicate records that got inserted from the previous step which is possible if a Member ID has a new order
+--  and a changed order on the same day
+;with cte as
+(select ORDER_NUMBER, LINE_NUMBER, quantity_ordered, count(*) as ttlcount 
+from stg.imis_Order_Lines
+where IsActive = 1 
+group by ORDER_NUMBER, LINE_NUMBER, quantity_ordered
+having count(*) > 1
+)
+
+, cte2 as
+(
+select ORDER_NUMBER, LINE_NUMBER, quantity_ordered, min(Id_Identitycolumn) as identityval from stg.imis_Order_Lines A where isactive = 1 and exists
+(Select * from cte B where A.ORDER_NUMBER = B.ORDER_NUMBER and A.LINE_NUMBER = B.LINE_NUMBER and A.QUANTITY_ORDERED = B.QUANTITY_ORDERED
+)
+group by ORDER_NUMBER, LINE_NUMBER, quantity_ordered
+)
+
+delete from stg.imis_Order_Lines where Id_Identitycolumn in
+(Select identityval from cte2)
+
+/****************Order_Meet *************************/
+MERGE stg.imis_Order_Meet AS DST
+USING tmp.imis_Order_Meet AS SRC
+       ON DST.Order_Number = SRC.Order_Number
+WHEN MATCHED
+              AND DST.IsActive = 1
+              AND (
+   ISNULL (DST.MEETING, '')	<> 	ISNULL (SRC.MEETING, '')
+OR ISNULL (DST.REGISTRANT_CLASS, '')	<> 	ISNULL (SRC.REGISTRANT_CLASS, '')
+OR ISNULL (DST.ARRIVAL, '')	<> 	ISNULL (SRC.ARRIVAL, '')
+OR ISNULL (DST.DEPARTURE, '')	<> 	ISNULL (SRC.DEPARTURE, '')
+OR ISNULL (DST.HOTEL, '')	<> 	ISNULL (SRC.HOTEL, '')
+OR ISNULL (DST.LODGING_INSTRUCTIONS, '')	<> 	ISNULL (SRC.LODGING_INSTRUCTIONS, '')
+OR ISNULL (DST.BOOTH, '')	<> 	ISNULL (SRC.BOOTH, '')
+OR ISNULL (DST.GUEST_FIRST, '')	<> 	ISNULL (SRC.GUEST_FIRST, '')
+OR ISNULL (DST.GUEST_MIDDLE, '')	<> 	ISNULL (SRC.GUEST_MIDDLE, '')
+OR ISNULL (DST.GUEST_LAST, '')	<> 	ISNULL (SRC.GUEST_LAST, '')
+OR ISNULL (DST.GUEST_IS_SPOUSE, '')	<> 	ISNULL (SRC.GUEST_IS_SPOUSE, '')
+OR ISNULL (DST.ADDITIONAL_BADGES, '')	<> 	ISNULL (SRC.ADDITIONAL_BADGES, '')
+OR ISNULL (DST.DELEGATE, '')	<> 	ISNULL (SRC.DELEGATE, '')
+OR ISNULL (DST.UF_1, '')	<> 	ISNULL (SRC.UF_1, '')
+OR ISNULL (DST.UF_2, '')	<> 	ISNULL (SRC.UF_2, '')
+OR ISNULL (DST.UF_3, '')	<> 	ISNULL (SRC.UF_3, '')
+OR ISNULL (DST.UF_4, '')	<> 	ISNULL (SRC.UF_4, '')
+OR ISNULL (DST.UF_5, '')	<> 	ISNULL (SRC.UF_5, '')
+OR ISNULL (DST.UF_6, '')	<> 	ISNULL (SRC.UF_6, '')
+OR ISNULL (DST.UF_7, '')	<> 	ISNULL (SRC.UF_7, '')
+OR ISNULL (DST.UF_8, '')	<> 	ISNULL (SRC.UF_8, '')
+OR ISNULL (DST.SHARE_STATUS, '')	<> 	ISNULL (SRC.SHARE_STATUS, '')
+OR ISNULL (DST.SHARE_ORDER_NUMBER, 0)	<> 	ISNULL (SRC.SHARE_ORDER_NUMBER, 0)
+OR ISNULL (DST.ROOM_TYPE, '')	<> 	ISNULL (SRC.ROOM_TYPE, '')
+OR ISNULL (DST.ROOM_QUANTITY, '')	<> 	ISNULL (SRC.ROOM_QUANTITY, '')
+OR ISNULL (DST.ROOM_CONFIRM, '')	<> 	ISNULL (SRC.ROOM_CONFIRM, '')
+OR ISNULL (DST.UF_9, '')	<> 	ISNULL (SRC.UF_9, '')
+OR ISNULL (DST.UF_10, '')	<> 	ISNULL (SRC.UF_10, '')
+OR ISNULL (DST.ARRIVAL_TIME, '')	<> 	ISNULL (SRC.ARRIVAL_TIME, '')
+OR ISNULL (DST.DEPARTURE_TIME, '')	<> 	ISNULL (SRC.DEPARTURE_TIME, '')
+OR ISNULL (DST.COMP_REGISTRATIONS, '')	<> 	ISNULL (SRC.COMP_REGISTRATIONS, '')
+OR ISNULL (DST.COMP_REG_SOURCE, 0)	<> 	ISNULL (SRC.COMP_REG_SOURCE, 0)
+OR ISNULL (DST.TOTAL_SQUARE_FEET, 0)	<> 	ISNULL (SRC.TOTAL_SQUARE_FEET, 0)
+OR ISNULL (DST.COMP_REGISTRATIONS_USED, '')	<> 	ISNULL (SRC.COMP_REGISTRATIONS_USED, '')
+OR ISNULL (DST.PARENT_ORDER_NUMBER, 0)	<> 	ISNULL (SRC.PARENT_ORDER_NUMBER, 0)
+OR ISNULL (DST.REGISTERED_BY_ID, '')	<> 	ISNULL (SRC.REGISTERED_BY_ID, '')
+
+  
+                     )
+              -- Update statement for a changed dimension record, to flag as no longer active, only insert fields they want to track 
+              THEN
+                     UPDATE
+                     SET DST.isActive = 0
+                           ,DST.EndDate = @Yesterday
+WHEN NOT MATCHED
+       THEN
+              INSERT (
+                    [ORDER_NUMBER]
+      ,[MEETING]
+      ,[REGISTRANT_CLASS]
+      ,[ARRIVAL]
+      ,[DEPARTURE]
+      ,[HOTEL]
+      ,[LODGING_INSTRUCTIONS]
+      ,[BOOTH]
+      ,[GUEST_FIRST]
+      ,[GUEST_MIDDLE]
+      ,[GUEST_LAST]
+      ,[GUEST_IS_SPOUSE]
+      ,[ADDITIONAL_BADGES]
+      ,[DELEGATE]
+      ,[UF_1]
+      ,[UF_2]
+      ,[UF_3]
+      ,[UF_4]
+      ,[UF_5]
+      ,[UF_6]
+      ,[UF_7]
+      ,[UF_8]
+      ,[SHARE_STATUS]
+      ,[SHARE_ORDER_NUMBER]
+      ,[ROOM_TYPE]
+      ,[ROOM_QUANTITY]
+      ,[ROOM_CONFIRM]
+      ,[UF_9]
+      ,[UF_10]
+      ,[ARRIVAL_TIME]
+      ,[DEPARTURE_TIME]
+      ,[COMP_REGISTRATIONS]
+      ,[COMP_REG_SOURCE]
+      ,[TOTAL_SQUARE_FEET]
+      ,[COMP_REGISTRATIONS_USED]
+      ,[PARENT_ORDER_NUMBER]
+      ,[REGISTERED_BY_ID]
+      ,[TIME_STAMP]
+      ,[IsActive]
+      ,[StartDate]
+          
+                     )
+              VALUES (
+                     SRC.[ORDER_NUMBER]
+      ,SRC.[MEETING]
+      ,SRC.[REGISTRANT_CLASS]
+      ,SRC.[ARRIVAL]
+      ,SRC.[DEPARTURE]
+      ,SRC.[HOTEL]
+      ,SRC.[LODGING_INSTRUCTIONS]
+      ,SRC.[BOOTH]
+      ,SRC.[GUEST_FIRST]
+      ,SRC.[GUEST_MIDDLE]
+      ,SRC.[GUEST_LAST]
+      ,SRC.[GUEST_IS_SPOUSE]
+      ,SRC.[ADDITIONAL_BADGES]
+      ,SRC.[DELEGATE]
+      ,SRC.[UF_1]
+      ,SRC.[UF_2]
+      ,SRC.[UF_3]
+      ,SRC.[UF_4]
+      ,SRC.[UF_5]
+      ,SRC.[UF_6]
+      ,SRC.[UF_7]
+      ,SRC.[UF_8]
+      ,SRC.[SHARE_STATUS]
+      ,SRC.[SHARE_ORDER_NUMBER]
+      ,SRC.[ROOM_TYPE]
+      ,SRC.[ROOM_QUANTITY]
+      ,SRC.[ROOM_CONFIRM]
+      ,SRC.[UF_9]
+      ,SRC.[UF_10]
+      ,SRC.[ARRIVAL_TIME]
+      ,SRC.[DEPARTURE_TIME]
+      ,SRC.[COMP_REGISTRATIONS]
+      ,SRC.[COMP_REG_SOURCE]
+      ,SRC.[TOTAL_SQUARE_FEET]
+      ,SRC.[COMP_REGISTRATIONS_USED]
+      ,SRC.[PARENT_ORDER_NUMBER]
+      ,SRC.[REGISTERED_BY_ID]
+      ,SRC.[TIME_STAMP]
+                 ,1
+                 ,@Today
+                     )
+			
+
+OUTPUT $ACTION AS action
+       ,inserted.ORDER_NUMBER
+       ,deleted.ORDER_NUMBER
+INTO #audittemp;
+
+
+
+INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
+VALUES (
+        @PipelineName
+	   ,'tmp.imis_Order_Meet'
+       ,'stg.imis_Order_Meet'
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'INSERT'
+                     GROUP BY action
+                     ) X
+              )
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'UPDATE'
+                     GROUP BY action
+                     ) X
+					 )
+			 ,(select count(*) as RowsRead
+				from tmp.imis_Order_Meet
+				) 
+       ,getdate()
+       )
+
+INSERT INTO stg.imis_Order_Meet (
+[ORDER_NUMBER]
+      ,[MEETING]
+      ,[REGISTRANT_CLASS]
+      ,[ARRIVAL]
+      ,[DEPARTURE]
+      ,[HOTEL]
+      ,[LODGING_INSTRUCTIONS]
+      ,[BOOTH]
+      ,[GUEST_FIRST]
+      ,[GUEST_MIDDLE]
+      ,[GUEST_LAST]
+      ,[GUEST_IS_SPOUSE]
+      ,[ADDITIONAL_BADGES]
+      ,[DELEGATE]
+      ,[UF_1]
+      ,[UF_2]
+      ,[UF_3]
+      ,[UF_4]
+      ,[UF_5]
+      ,[UF_6]
+      ,[UF_7]
+      ,[UF_8]
+      ,[SHARE_STATUS]
+      ,[SHARE_ORDER_NUMBER]
+      ,[ROOM_TYPE]
+      ,[ROOM_QUANTITY]
+      ,[ROOM_CONFIRM]
+      ,[UF_9]
+      ,[UF_10]
+      ,[ARRIVAL_TIME]
+      ,[DEPARTURE_TIME]
+      ,[COMP_REGISTRATIONS]
+      ,[COMP_REG_SOURCE]
+      ,[TOTAL_SQUARE_FEET]
+      ,[COMP_REGISTRATIONS_USED]
+      ,[PARENT_ORDER_NUMBER]
+      ,[REGISTERED_BY_ID]
+      ,[TIME_STAMP]
+      ,[IsActive]
+      ,[StartDate]
+                 )
+select  
+                    [ORDER_NUMBER]
+      ,[MEETING]
+      ,[REGISTRANT_CLASS]
+      ,[ARRIVAL]
+      ,[DEPARTURE]
+      ,[HOTEL]
+      ,[LODGING_INSTRUCTIONS]
+      ,[BOOTH]
+      ,[GUEST_FIRST]
+      ,[GUEST_MIDDLE]
+      ,[GUEST_LAST]
+      ,[GUEST_IS_SPOUSE]
+      ,[ADDITIONAL_BADGES]
+      ,[DELEGATE]
+      ,[UF_1]
+      ,[UF_2]
+      ,[UF_3]
+      ,[UF_4]
+      ,[UF_5]
+      ,[UF_6]
+      ,[UF_7]
+      ,[UF_8]
+      ,[SHARE_STATUS]
+      ,[SHARE_ORDER_NUMBER]
+      ,[ROOM_TYPE]
+      ,[ROOM_QUANTITY]
+      ,[ROOM_CONFIRM]
+      ,[UF_9]
+      ,[UF_10]
+      ,[ARRIVAL_TIME]
+      ,[DEPARTURE_TIME]
+      ,[COMP_REGISTRATIONS]
+      ,[COMP_REG_SOURCE]
+      ,[TOTAL_SQUARE_FEET]
+      ,[COMP_REGISTRATIONS_USED]
+      ,[PARENT_ORDER_NUMBER]
+      ,[REGISTERED_BY_ID]
+           ,cast(TIME_STAMP as bigint)
+                 ,1
+                 ,@Today
+           
+         
+FROM 
+tmp.imis_order_meet
+WHERE order_number IN (
+              SELECT inserted_ID
+              FROM #audittemp
+              WHERE action = 'UPDATE'
+              )
+
+
+			  Truncate TABLE #audittemp
+
+
+--			  /**********************************************CUSTOM_EVENT_REGISTRATION*********************************************/
+-----add new event registration records to the Custom Event Registration Staging Table
+
+
+----IF OBJECT_ID('tempdb..#audittemp') IS NOT NULL
+----       Truncate TABLE #audittemp
+
+----CREATE TABLE #audittemp (
+----       action NVARCHAR(20)
+----       ,inserted_id varchar(30)
+----       ,deleted_id varchar(30)
+----       );
+
+MERGE stg.imis_Custom_Event_Registration AS DST
+USING tmp.imis_Custom_Event_Registration AS SRC
+       ON DST.ID = SRC.ID and
+	   DST.SEQN = SRC.SEQN
+WHEN MATCHED
+              AND IsActive = 1
+              AND (
+                   
+                     ISNULL(DST.MEETING, '') <> ISNULL(SRC.MEETING, '')
+                     OR ISNULL(DST.ADDRESS_1, '') <> ISNULL(SRC.ADDRESS_1, '')
+                     OR ISNULL(DST.ADDRESS_2, '') <> ISNULL(SRC.ADDRESS_2, '')
+                     OR ISNULL(DST.CITY, '') <> ISNULL(SRC.CITY, '')
+                     OR ISNULL(DST.STATE_PROVINCE, '') <> ISNULL(SRC.STATE_PROVINCE, '')
+                     OR ISNULL(DST.COUNTRY, '') <> ISNULL(SRC.COUNTRY, '')
+                     OR ISNULL(DST.ZIP, '') <> ISNULL(SRC.ZIP, '')
+                     OR ISNULL(DST.BADGE_NAME, '') <> ISNULL(SRC.BADGE_NAME, '')
+                     OR ISNULL(DST.BADGE_COMPANY, '') <> ISNULL(SRC.BADGE_COMPANY, '')
+					 OR ISNULL(DST.BADGE_LOCATION, '') <> ISNULL(SRC.BADGE_LOCATION, '')
+                     
+                     )
+              -- Update statement for a changed dimension record, to flag as no longer active, only insert fields they want to track 
+              THEN
+                     UPDATE
+                     SET DST.isActive = 0
+                           ,DST.EndDate = @Yesterday
+WHEN NOT MATCHED
+       THEN
+              INSERT (
+       ID
+      ,SEQN
+      ,MEETING
+      ,ADDRESS_1
+      ,ADDRESS_2
+      ,CITY
+      ,STATE_PROVINCE
+      ,COUNTRY
+      ,ZIP
+      ,BADGE_NAME
+      ,BADGE_COMPANY
+      ,BADGE_LOCATION
+      ,TIME_STAMP
+      ,IsActive
+      ,StartDate
+          
+                     )
+              VALUES (
+                     SRC. ID
+      ,SRC.SEQN
+      ,SRC.MEETING
+      ,SRC.ADDRESS_1
+      ,SRC.ADDRESS_2
+      ,SRC.CITY
+      ,SRC.STATE_PROVINCE
+      ,SRC.COUNTRY
+      ,SRC.ZIP
+      ,SRC.BADGE_NAME
+      ,SRC.BADGE_COMPANY
+      ,SRC.BADGE_LOCATION
+      ,SRC.TIME_STAMP
+	  ,1
+      ,@Today
+                     ) 
+
+OUTPUT $ACTION AS action
+       ,inserted.ID
+       ,deleted.ID
+INTO #audittemp;
+
+
+
+INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
+VALUES (
+       @PipelineName
+	   ,'tmp.imis_Custom_Event_Registration'
+       ,'stg.imis_Custom_Event_Registration'
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'INSERT'
+                     GROUP BY action
+                     ) X
+              )
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'UPDATE'
+                     GROUP BY action
+                     ) X
+					 )
+		,(select count(*) as RowsRead
+				from tmp.imis_Custom_Event_Registration
+				)     
+       ,getdate()
+       )
+
+INSERT INTO stg.imis_Custom_Event_Registration (
+ ID
+      ,SEQN
+      ,MEETING
+      ,ADDRESS_1
+      ,ADDRESS_2
+      ,CITY
+      ,STATE_PROVINCE
+      ,COUNTRY
+      ,ZIP
+      ,BADGE_NAME
+      ,BADGE_COMPANY
+      ,BADGE_LOCATION
+      ,TIME_STAMP
+      ,IsActive
+      ,StartDate 
+                 )
+select  
+                     ID
+      ,SEQN
+      ,MEETING
+      ,ADDRESS_1
+      ,ADDRESS_2
+      ,CITY
+      ,STATE_PROVINCE
+      ,COUNTRY
+      ,ZIP
+      ,BADGE_NAME
+      ,BADGE_COMPANY
+      ,BADGE_LOCATION
+      ,cast(TIME_STAMP as bigint)
+      ,1
+      ,@Today
+           
+         
+FROM 
+tmp.imis_Custom_Event_Registration
+WHERE ID IN (
+              SELECT inserted_ID
+              FROM #audittemp
+              WHERE action = 'UPDATE'
+              )
+
+			  Truncate TABLE #audittemp
+
+--  Below process will delete any duplicate records that got inserted from the previous step which is possible if a Member ID has a new registration
+--  and a changed registration on the same day
+;with cte as
+(select ID, SEQN, MEETING, count(*) as ttlcount 
+from stg.imis_Custom_Event_Registration
+where IsActive = 1 
+group by ID, SEQN, MEETING
+having count(*) > 1
+)
+
+
+, cte2 as
+(
+select ID, SEQN, MEETING, min(Id_Identitycolumn) as identityval from stg.imis_Custom_Event_Registration A where isactive = 1 and exists
+(Select * from cte B where A.ID = B.ID and A.SEQN = B.SEQN and A.MEETING = B.MEETING
+)
+group by ID, SEQN, MEETING
+
+)
+
+delete from stg.imis_Custom_Event_Registration  where Id_Identitycolumn in
+(Select identityval from cte2)
+
+/**********************************************CUSTOM_EVENT_SCHEDULE********************************************/
+---add new event schedule records to the Custom Event Schedule Staging Table
+
+
+--IF OBJECT_ID('tempdb..#audittemp') IS NOT NULL
+--       Truncate TABLE #audittemp
+
+--CREATE TABLE #audittemp (
+--       action NVARCHAR(20)
+--       ,inserted_id varchar(30)
+--       ,deleted_id varchar(30)
+--       );
+
+MERGE stg.imis_Custom_Event_Schedule AS DST
+USING tmp.imis_Custom_Event_Schedule AS SRC
+       ON DST.ID = SRC.ID and
+	   DST.SEQN = SRC.SEQN
+WHEN MATCHED
+              AND IsActive = 1
+              AND (
+                   
+                     ISNULL(DST.MEETING, '') <> ISNULL(SRC.MEETING, '')
+                     OR ISNULL(DST.REGISTRANT_CLASS, '') <> ISNULL(SRC.REGISTRANT_CLASS, '')
+                     OR ISNULL(DST.PRODUCT_CODE, '') <> ISNULL(SRC.PRODUCT_CODE, '')
+                     OR ISNULL(DST.[STATUS], '') <> ISNULL(SRC.[STATUS], '')
+                     OR ISNULL(DST.UNIT_PRICE, '') <> ISNULL(SRC.UNIT_PRICE, '')
+					 OR ISNULL(DST.IS_WAITLIST, '') <> ISNULL(SRC.IS_WAITLIST, '')
+            
+                     )
+              -- Update statement for a changed dimension record, to flag as no longer active, only insert fields they want to track 
+              THEN
+                     UPDATE
+                     SET DST.isActive = 0
+                           ,DST.EndDate = @Yesterday
+WHEN NOT MATCHED
+       THEN
+              INSERT (
+           ID
+      ,SEQN
+      ,MEETING
+      ,REGISTRANT_CLASS
+      ,PRODUCT_CODE
+      ,[STATUS]
+      ,UNIT_PRICE
+	  ,IS_WAITLIST
+      ,TIME_STAMP
+      ,IsActive
+      ,StartDate
+          
+                     )
+              VALUES (
+                     SRC.ID
+      ,SRC.SEQN
+      ,SRC.MEETING
+      ,SRC.REGISTRANT_CLASS
+      ,SRC.PRODUCT_CODE
+      ,SRC.[STATUS]
+      ,SRC.UNIT_PRICE
+	  ,SRC.IS_WAITLIST
+      ,SRC.TIME_STAMP
+	  ,1
+      ,@Today
+                     ) 
+
+OUTPUT $ACTION AS action
+       ,inserted.ID
+       ,deleted.ID
+INTO #audittemp;
+
+
+
+INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
+VALUES (
+       @PipelineName
+	   ,'tmp.imis_Custom_Event_Schedule'
+       ,'stg.imis_Custom_Event_Schedule'
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'INSERT'
+                     GROUP BY action
+                     ) X
+              )
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'UPDATE'
+                     GROUP BY action
+                     ) X
+					 )
+		 ,(select count(*) as RowsRead
+				from tmp.imis_Custom_Event_Schedule
+				) 
+       ,getdate()
+       )
+
+INSERT INTO stg.imis_Custom_Event_Schedule (
+ID
+      ,SEQN
+      ,MEETING
+      ,REGISTRANT_CLASS
+      ,PRODUCT_CODE
+      ,[STATUS]
+      ,UNIT_PRICE
+	  ,IS_WAITLIST
+      ,TIME_STAMP
+      ,IsActive
+      ,StartDate 
+                 )
+select  
+                    ID
+      ,SEQN
+      ,MEETING
+      ,REGISTRANT_CLASS
+      ,PRODUCT_CODE
+      ,[STATUS]
+      ,UNIT_PRICE
+	  ,IS_WAITLIST
+      ,cast(TIME_STAMP as bigint)
+      ,1
+      ,@Today
+           
+         
+FROM 
+tmp.imis_Custom_Event_Schedule
+WHERE ID IN (
+              SELECT inserted_ID
+              FROM #audittemp
+              WHERE action = 'UPDATE'
+              )
+
+			  Truncate TABLE #audittemp
+
+--  Below process will delete any duplicate records that got inserted from the previous step which is possible if a Member ID has a new event
+--  and a changed event on the same day
+;with cte as
+(select ID, SEQN, PRODUCT_CODE, count(*) as ttlcount 
+from stg.imis_Custom_Event_Schedule
+where IsActive = 1 
+group by id, SEQN, PRODUCT_CODE
+having count(*) > 1
+)
+
+, cte2 as
+(
+select ID, SEQN, PRODUCT_CODE, min(Id_Identitycolumn) as identityval from stg.imis_Custom_Event_Schedule A where isactive = 1 and exists
+(Select * from cte B where A.ID = B.ID and A.SEQN = B.SEQN and A.PRODUCT_CODE = B.PRODUCT_CODE
+)
+group by ID, SEQN, PRODUCT_CODE
+
+)
+
+delete from stg.imis_Custom_Event_Schedule  where Id_Identitycolumn in
+(Select identityval from cte2)
 
 
 /****************************************Trans********************/

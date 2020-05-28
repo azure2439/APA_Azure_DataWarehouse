@@ -337,7 +337,7 @@ VALUES (
 		,getdate()
        )
 
-INSERT INTO stg.ContactMain (
+INSERT INTO stg.imis_ContactMain (
 [ContactKey]
       ,[ContactStatusCode]
       ,[FullName]
@@ -1143,7 +1143,277 @@ WHERE PostalCodeKey IN (
 
 			  Truncate TABLE #audittemp
 
+/********************************OrderMeet*****************************/
+MERGE stg.imis_Order_Meet AS DST
+USING tmp.imis_Order_Meet AS SRC
+       ON DST.ORDER_NUMBER = SRC.ORDER_NUMBER
+WHEN MATCHED
+              AND DST.IsActive = 1
+              AND (
+                   
+                     ISNULL(DST.MEETING, '') <> ISNULL(SRC.MEETING, '')
+                     OR ISNULL(DST.REGISTRANT_CLASS, '') <> ISNULL(SRC.REGISTRANT_CLASS, '')
+                     OR ISNULL(DST.ARRIVAL, '') <> ISNULL(SRC.ARRIVAL, '')
+                     OR ISNULL(DST.DEPARTURE, '') <> ISNULL(SRC.DEPARTURE, '')
+                     OR ISNULL(DST.HOTEL, '') <> ISNULL(SRC.HOTEL, '')
+                     OR ISNULL(DST.LODGING_INSTRUCTIONS, '') <> ISNULL(SRC.LODGING_INSTRUCTIONS, '')
+                     OR ISNULL(DST.BOOTH, '') <> ISNULL(SRC.BOOTH, '')
+                     OR ISNULL(DST.GUEST_FIRST, '') <> ISNULL(SRC.GUEST_FIRST, '')
+                     OR ISNULL(DST.GUEST_MIDDLE, '') <> ISNULL(SRC.GUEST_MIDDLE, '')
+					 OR ISNULL(DST.GUEST_LAST, '') <> ISNULL(SRC.GUEST_LAST, '')
+					 OR ISNULL(DST.GUEST_IS_SPOUSE, '') <> ISNULL(SRC.GUEST_IS_SPOUSE, '')
+					 OR ISNULL(DST.ADDITIONAL_BADGES, '') <> ISNULL(SRC.ADDITIONAL_BADGES, '')
+                     OR ISNULL(DST.DELEGATE, '') <> ISNULL(SRC.DELEGATE, '')
+					 OR ISNULL(DST.UF_1, '') <> ISNULL(SRC.UF_1, '')
+					 OR ISNULL(DST.UF_2, '') <> ISNULL(SRC.UF_2, '')
+					 OR ISNULL(DST.UF_3, '') <> ISNULL(SRC.UF_3, '')
+					 OR ISNULL(DST.UF_4, '') <> ISNULL(SRC.UF_4, '')
+					 OR ISNULL(DST.UF_5, '') <> ISNULL(SRC.UF_5, '')
+					 OR ISNULL(DST.UF_6, '') <> ISNULL(SRC.UF_6, '')
+					 OR ISNULL(DST.UF_7, '') <> ISNULL(SRC.UF_7, '')
+					 OR ISNULL(DST.UF_8, '') <> ISNULL(SRC.UF_8, '')
+					 OR ISNULL(DST.SHARE_STATUS, '') <> ISNULL(SRC.SHARE_STATUS, '')
+					 OR ISNULL(DST.SHARE_ORDER_NUMBER, 0) <> ISNULL(SRC.SHARE_ORDER_NUMBER, 0)
+					 OR ISNULL(DST.ROOM_TYPE, '') <> ISNULL(SRC.ROOM_TYPE, '')
+					 OR ISNULL(DST.ROOM_QUANTITY, '') <> ISNULL(SRC.ROOM_QUANTITY, '')
+					 OR ISNULL(DST.ROOM_CONFIRM, '') <> ISNULL(SRC.ROOM_CONFIRM, '')
+					 OR ISNULL(DST.UF_9, '') <> ISNULL(SRC.UF_9, '')
+					 OR ISNULL(DST.UF_10, '') <> ISNULL(SRC.UF_10, '')
+					 OR ISNULL(DST.ARRIVAL_TIME, '') <> ISNULL(SRC.ARRIVAL_TIME, '')
+					 OR ISNULL(DST.DEPARTURE_TIME, '') <> ISNULL(SRC.DEPARTURE_TIME, '')
+					 OR ISNULL(DST.COMP_REGISTRATIONS, '') <> ISNULL(SRC.COMP_REGISTRATIONS, '')
+					 OR ISNULL(DST.COMP_REG_SOURCE, '') <> ISNULL(SRC.COMP_REG_SOURCE, '')
+					 OR ISNULL(DST.TOTAL_SQUARE_FEET, 0) <> ISNULL(SRC.TOTAL_SQUARE_FEET, 0)
+					 OR ISNULL(DST.COMP_REGISTRATIONS_USED, '') <> ISNULL(SRC.COMP_REGISTRATIONS_USED, '')
+					 OR ISNULL(DST.PARENT_ORDER_NUMBER, 0) <> ISNULL(SRC.PARENT_ORDER_NUMBER, 0)
+					 OR ISNULL(DST.REGISTERED_BY_ID, '') <> ISNULL(SRC.REGISTERED_BY_ID, '')
+                     )
+              -- Update statement for a changed dimension record, to flag as no longer active, only insert fields they want to track 
+              THEN
+                     UPDATE
+                     SET DST.isActive = 0
+                           ,DST.EndDate = @Yesterday
+WHEN NOT MATCHED
+       THEN
+              INSERT (
+                    [ORDER_NUMBER]
+      ,[MEETING]
+      ,[REGISTRANT_CLASS]
+      ,[ARRIVAL]
+      ,[DEPARTURE]
+      ,[HOTEL]
+      ,[LODGING_INSTRUCTIONS]
+      ,[BOOTH]
+      ,[GUEST_FIRST]
+      ,[GUEST_MIDDLE]
+      ,[GUEST_LAST]
+      ,[GUEST_IS_SPOUSE]
+      ,[ADDITIONAL_BADGES]
+      ,[DELEGATE]
+      ,[UF_1]
+      ,[UF_2]
+      ,[UF_3]
+      ,[UF_4]
+      ,[UF_5]
+      ,[UF_6]
+      ,[UF_7]
+      ,[UF_8]
+      ,[SHARE_STATUS]
+      ,[SHARE_ORDER_NUMBER]
+      ,[ROOM_TYPE]
+      ,[ROOM_QUANTITY]
+      ,[ROOM_CONFIRM]
+      ,[UF_9]
+      ,[UF_10]
+      ,[ARRIVAL_TIME]
+      ,[DEPARTURE_TIME]
+      ,[COMP_REGISTRATIONS]
+      ,[COMP_REG_SOURCE]
+      ,[TOTAL_SQUARE_FEET]
+      ,[COMP_REGISTRATIONS_USED]
+      ,[PARENT_ORDER_NUMBER]
+      ,[REGISTERED_BY_ID]
+      ,[TIME_STAMP]
+      ,[IsActive]
+      ,[StartDate]
+          
+                     )
+              VALUES (
+                      SRC.[ORDER_NUMBER]
+      ,SRC.[MEETING]
+      ,SRC.[REGISTRANT_CLASS]
+      ,SRC.[ARRIVAL]
+      ,SRC.[DEPARTURE]
+      ,SRC.[HOTEL]
+      ,SRC.[LODGING_INSTRUCTIONS]
+      ,SRC.[BOOTH]
+      ,SRC.[GUEST_FIRST]
+      ,SRC.[GUEST_MIDDLE]
+      ,SRC.[GUEST_LAST]
+      ,SRC.[GUEST_IS_SPOUSE]
+      ,SRC.[ADDITIONAL_BADGES]
+      ,SRC.[DELEGATE]
+      ,SRC.[UF_1]
+      ,SRC.[UF_2]
+      ,SRC.[UF_3]
+      ,SRC.[UF_4]
+      ,SRC.[UF_5]
+      ,SRC.[UF_6]
+      ,SRC.[UF_7]
+      ,SRC.[UF_8]
+      ,SRC.[SHARE_STATUS]
+      ,SRC.[SHARE_ORDER_NUMBER]
+      ,SRC.[ROOM_TYPE]
+      ,SRC.[ROOM_QUANTITY]
+      ,SRC.[ROOM_CONFIRM]
+      ,SRC.[UF_9]
+      ,SRC.[UF_10]
+      ,SRC.[ARRIVAL_TIME]
+      ,SRC.[DEPARTURE_TIME]
+      ,SRC.[COMP_REGISTRATIONS]
+      ,SRC.[COMP_REG_SOURCE]
+      ,SRC.[TOTAL_SQUARE_FEET]
+      ,SRC.[COMP_REGISTRATIONS_USED]
+      ,SRC.[PARENT_ORDER_NUMBER]
+      ,SRC.[REGISTERED_BY_ID]
+      ,SRC.[TIME_STAMP]
+      ,1
+      ,@Today
+                     ) 
 
+OUTPUT $ACTION AS action
+       ,inserted.ORDER_NUMBER
+       ,deleted.ORDER_NUMBER
+INTO #audittemp;
+
+
+
+INSERT INTO etl.executionlog
+VALUES (
+		'@PipelineName'
+	   ,'tmp.imis_Order_Meet'
+       ,'stg.imis_Order_Meet'
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'INSERT'
+                     GROUP BY action
+                     ) X
+              )
+       ,(
+              SELECT action_Count
+              FROM (
+                     SELECT action
+                           ,count(*) AS action_count
+                     FROM #audittemp
+                     WHERE action = 'UPDATE'
+                     GROUP BY action
+                     ) X
+					 )
+			,(select count(*) as RowsRead
+				from tmp.imis_Order_Meet
+				) 
+       ,getdate()
+       )
+
+INSERT INTO stg.imis_Order_Meet (
+ [ORDER_NUMBER]
+      ,[MEETING]
+      ,[REGISTRANT_CLASS]
+      ,[ARRIVAL]
+      ,[DEPARTURE]
+      ,[HOTEL]
+      ,[LODGING_INSTRUCTIONS]
+      ,[BOOTH]
+      ,[GUEST_FIRST]
+      ,[GUEST_MIDDLE]
+      ,[GUEST_LAST]
+      ,[GUEST_IS_SPOUSE]
+      ,[ADDITIONAL_BADGES]
+      ,[DELEGATE]
+      ,[UF_1]
+      ,[UF_2]
+      ,[UF_3]
+      ,[UF_4]
+      ,[UF_5]
+      ,[UF_6]
+      ,[UF_7]
+      ,[UF_8]
+      ,[SHARE_STATUS]
+      ,[SHARE_ORDER_NUMBER]
+      ,[ROOM_TYPE]
+      ,[ROOM_QUANTITY]
+      ,[ROOM_CONFIRM]
+      ,[UF_9]
+      ,[UF_10]
+      ,[ARRIVAL_TIME]
+      ,[DEPARTURE_TIME]
+      ,[COMP_REGISTRATIONS]
+      ,[COMP_REG_SOURCE]
+      ,[TOTAL_SQUARE_FEET]
+      ,[COMP_REGISTRATIONS_USED]
+      ,[PARENT_ORDER_NUMBER]
+      ,[REGISTERED_BY_ID]
+      ,[TIME_STAMP]
+      ,[IsActive]
+      ,[StartDate]
+                 )
+select  
+                   [ORDER_NUMBER]
+      ,[MEETING]
+      ,[REGISTRANT_CLASS]
+      ,[ARRIVAL]
+      ,[DEPARTURE]
+      ,[HOTEL]
+      ,[LODGING_INSTRUCTIONS]
+      ,[BOOTH]
+      ,[GUEST_FIRST]
+      ,[GUEST_MIDDLE]
+      ,[GUEST_LAST]
+      ,[GUEST_IS_SPOUSE]
+      ,[ADDITIONAL_BADGES]
+      ,[DELEGATE]
+      ,[UF_1]
+      ,[UF_2]
+      ,[UF_3]
+      ,[UF_4]
+      ,[UF_5]
+      ,[UF_6]
+      ,[UF_7]
+      ,[UF_8]
+      ,[SHARE_STATUS]
+      ,[SHARE_ORDER_NUMBER]
+      ,[ROOM_TYPE]
+      ,[ROOM_QUANTITY]
+      ,[ROOM_CONFIRM]
+      ,[UF_9]
+      ,[UF_10]
+      ,[ARRIVAL_TIME]
+      ,[DEPARTURE_TIME]
+      ,[COMP_REGISTRATIONS]
+      ,[COMP_REG_SOURCE]
+      ,[TOTAL_SQUARE_FEET]
+      ,[COMP_REGISTRATIONS_USED]
+      ,[PARENT_ORDER_NUMBER]
+      ,[REGISTERED_BY_ID]
+      ,cast([TIME_STAMP] as bigint)
+      ,1
+      ,@Today
+           
+         
+FROM 
+tmp.imis_Order_Meet
+WHERE order_number IN (
+              SELECT inserted_ID
+              FROM #audittemp
+              WHERE action = 'UPDATE'
+              )
+
+
+			  Truncate TABLE #audittemp
 
 
 /**************************************************table**********************/
