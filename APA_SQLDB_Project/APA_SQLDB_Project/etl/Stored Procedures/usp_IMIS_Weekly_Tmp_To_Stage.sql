@@ -117,7 +117,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-       '@PipelineName'
+       @PipelineName
 	   ,'tmp.imis_ACAD_Program_Details'
        ,'stg.imis_ACAD_Program_Details'
        ,(
@@ -276,7 +276,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-       '@PipelineName'
+       @PipelineName
 	   ,'tmp.imis_Advocacy'
        ,'stg.imis_Advocacy'
        ,(
@@ -353,303 +353,7 @@ WHERE ID IN (
 			  Truncate TABLE #audittemp
 
 
-/**********************************************CUSTOM_EVENT_REGISTRATION*********************************************/
----add new event registration records to the Custom Event Registration Staging Table
 
-
---IF OBJECT_ID('tempdb..#audittemp') IS NOT NULL
---       Truncate TABLE #audittemp
-
---CREATE TABLE #audittemp (
---       action NVARCHAR(20)
---       ,inserted_id varchar(30)
---       ,deleted_id varchar(30)
---       );
-
-MERGE stg.imis_Custom_Event_Registration AS DST
-USING tmp.imis_Custom_Event_Registration AS SRC
-       ON DST.ID = SRC.ID and
-	   DST.SEQN = SRC.SEQN
-WHEN MATCHED
-              AND IsActive = 1
-              AND (
-                   
-                     ISNULL(DST.MEETING, '') <> ISNULL(SRC.MEETING, '')
-                     OR ISNULL(DST.ADDRESS_1, '') <> ISNULL(SRC.ADDRESS_1, '')
-                     OR ISNULL(DST.ADDRESS_2, '') <> ISNULL(SRC.ADDRESS_2, '')
-                     OR ISNULL(DST.CITY, '') <> ISNULL(SRC.CITY, '')
-                     OR ISNULL(DST.STATE_PROVINCE, '') <> ISNULL(SRC.STATE_PROVINCE, '')
-                     OR ISNULL(DST.COUNTRY, '') <> ISNULL(SRC.COUNTRY, '')
-                     OR ISNULL(DST.ZIP, '') <> ISNULL(SRC.ZIP, '')
-                     OR ISNULL(DST.BADGE_NAME, '') <> ISNULL(SRC.BADGE_NAME, '')
-                     OR ISNULL(DST.BADGE_COMPANY, '') <> ISNULL(SRC.BADGE_COMPANY, '')
-					 OR ISNULL(DST.BADGE_LOCATION, '') <> ISNULL(SRC.BADGE_LOCATION, '')
-                     
-                     )
-              -- Update statement for a changed dimension record, to flag as no longer active, only insert fields they want to track 
-              THEN
-                     UPDATE
-                     SET DST.isActive = 0
-                           ,DST.EndDate = @Yesterday
-WHEN NOT MATCHED
-       THEN
-              INSERT (
-       ID
-      ,SEQN
-      ,MEETING
-      ,ADDRESS_1
-      ,ADDRESS_2
-      ,CITY
-      ,STATE_PROVINCE
-      ,COUNTRY
-      ,ZIP
-      ,BADGE_NAME
-      ,BADGE_COMPANY
-      ,BADGE_LOCATION
-      ,TIME_STAMP
-      ,IsActive
-      ,StartDate
-          
-                     )
-              VALUES (
-                     SRC. ID
-      ,SRC.SEQN
-      ,SRC.MEETING
-      ,SRC.ADDRESS_1
-      ,SRC.ADDRESS_2
-      ,SRC.CITY
-      ,SRC.STATE_PROVINCE
-      ,SRC.COUNTRY
-      ,SRC.ZIP
-      ,SRC.BADGE_NAME
-      ,SRC.BADGE_COMPANY
-      ,SRC.BADGE_LOCATION
-      ,SRC.TIME_STAMP
-	  ,1
-      ,@Today
-                     ) 
-
-OUTPUT $ACTION AS action
-       ,inserted.ID
-       ,deleted.ID
-INTO #audittemp;
-
-
-
-INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
-VALUES (
-       '@PipelineName'
-	   ,'tmp.imis_Custom_Event_Registration'
-       ,'stg.imis_Custom_Event_Registration'
-       ,(
-              SELECT action_Count
-              FROM (
-                     SELECT action
-                           ,count(*) AS action_count
-                     FROM #audittemp
-                     WHERE action = 'INSERT'
-                     GROUP BY action
-                     ) X
-              )
-       ,(
-              SELECT action_Count
-              FROM (
-                     SELECT action
-                           ,count(*) AS action_count
-                     FROM #audittemp
-                     WHERE action = 'UPDATE'
-                     GROUP BY action
-                     ) X
-					 )
-		,(select count(*) as RowsRead
-				from tmp.imis_Custom_Event_Registration
-				)     
-       ,getdate()
-       )
-
-INSERT INTO stg.imis_Custom_Event_Registration (
- ID
-      ,SEQN
-      ,MEETING
-      ,ADDRESS_1
-      ,ADDRESS_2
-      ,CITY
-      ,STATE_PROVINCE
-      ,COUNTRY
-      ,ZIP
-      ,BADGE_NAME
-      ,BADGE_COMPANY
-      ,BADGE_LOCATION
-      ,TIME_STAMP
-      ,IsActive
-      ,StartDate 
-                 )
-select  
-                     ID
-      ,SEQN
-      ,MEETING
-      ,ADDRESS_1
-      ,ADDRESS_2
-      ,CITY
-      ,STATE_PROVINCE
-      ,COUNTRY
-      ,ZIP
-      ,BADGE_NAME
-      ,BADGE_COMPANY
-      ,BADGE_LOCATION
-      ,cast(TIME_STAMP as bigint)
-      ,1
-      ,@Today
-           
-         
-FROM 
-tmp.imis_Custom_Event_Registration
-WHERE ID IN (
-              SELECT inserted_ID
-              FROM #audittemp
-              WHERE action = 'UPDATE'
-              )
-
-			  Truncate TABLE #audittemp
-
-/**********************************************CUSTOM_EVENT_SCHEDULE********************************************/
----add new event schedule records to the Custom Event Schedule Staging Table
-
-
---IF OBJECT_ID('tempdb..#audittemp') IS NOT NULL
---       Truncate TABLE #audittemp
-
---CREATE TABLE #audittemp (
---       action NVARCHAR(20)
---       ,inserted_id varchar(30)
---       ,deleted_id varchar(30)
---       );
-
-MERGE stg.imis_Custom_Event_Schedule AS DST
-USING tmp.imis_Custom_Event_Schedule AS SRC
-       ON DST.ID = SRC.ID and
-	   DST.SEQN = SRC.SEQN
-WHEN MATCHED
-              AND IsActive = 1
-              AND (
-                   
-                     ISNULL(DST.MEETING, '') <> ISNULL(SRC.MEETING, '')
-                     OR ISNULL(DST.REGISTRANT_CLASS, '') <> ISNULL(SRC.REGISTRANT_CLASS, '')
-                     OR ISNULL(DST.PRODUCT_CODE, '') <> ISNULL(SRC.PRODUCT_CODE, '')
-                     OR ISNULL(DST.[STATUS], '') <> ISNULL(SRC.[STATUS], '')
-                     OR ISNULL(DST.UNIT_PRICE, '') <> ISNULL(SRC.UNIT_PRICE, '')
-					 OR ISNULL(DST.IS_WAITLIST, '') <> ISNULL(SRC.IS_WAITLIST, '')
-            
-                     )
-              -- Update statement for a changed dimension record, to flag as no longer active, only insert fields they want to track 
-              THEN
-                     UPDATE
-                     SET DST.isActive = 0
-                           ,DST.EndDate = @Yesterday
-WHEN NOT MATCHED
-       THEN
-              INSERT (
-           ID
-      ,SEQN
-      ,MEETING
-      ,REGISTRANT_CLASS
-      ,PRODUCT_CODE
-      ,[STATUS]
-      ,UNIT_PRICE
-	  ,IS_WAITLIST
-      ,TIME_STAMP
-      ,IsActive
-      ,StartDate
-          
-                     )
-              VALUES (
-                     SRC.ID
-      ,SRC.SEQN
-      ,SRC.MEETING
-      ,SRC.REGISTRANT_CLASS
-      ,SRC.PRODUCT_CODE
-      ,SRC.[STATUS]
-      ,SRC.UNIT_PRICE
-	  ,SRC.IS_WAITLIST
-      ,SRC.TIME_STAMP
-	  ,1
-      ,@Today
-                     ) 
-
-OUTPUT $ACTION AS action
-       ,inserted.ID
-       ,deleted.ID
-INTO #audittemp;
-
-
-
-INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
-VALUES (
-       '@PipelineName'
-	   ,'tmp.imis_Custom_Event_Schedule'
-       ,'stg.imis_Custom_Event_Schedule'
-       ,(
-              SELECT action_Count
-              FROM (
-                     SELECT action
-                           ,count(*) AS action_count
-                     FROM #audittemp
-                     WHERE action = 'INSERT'
-                     GROUP BY action
-                     ) X
-              )
-       ,(
-              SELECT action_Count
-              FROM (
-                     SELECT action
-                           ,count(*) AS action_count
-                     FROM #audittemp
-                     WHERE action = 'UPDATE'
-                     GROUP BY action
-                     ) X
-					 )
-		 ,(select count(*) as RowsRead
-				from tmp.imis_Custom_Event_Schedule
-				) 
-       ,getdate()
-       )
-
-INSERT INTO stg.imis_Custom_Event_Schedule (
-ID
-      ,SEQN
-      ,MEETING
-      ,REGISTRANT_CLASS
-      ,PRODUCT_CODE
-      ,[STATUS]
-      ,UNIT_PRICE
-	  ,IS_WAITLIST
-      ,TIME_STAMP
-      ,IsActive
-      ,StartDate 
-                 )
-select  
-                    ID
-      ,SEQN
-      ,MEETING
-      ,REGISTRANT_CLASS
-      ,PRODUCT_CODE
-      ,[STATUS]
-      ,UNIT_PRICE
-	  ,IS_WAITLIST
-      ,cast(TIME_STAMP as bigint)
-      ,1
-      ,@Today
-           
-         
-FROM 
-tmp.imis_Custom_Event_Schedule
-WHERE ID IN (
-              SELECT inserted_ID
-              FROM #audittemp
-              WHERE action = 'UPDATE'
-              )
-
-			  Truncate TABLE #audittemp
 
 /**********************************************CUSTOM_SCHOOLACCREDITED***********************************/
 ---add new school accreditation records to the Custom School Accredited Staging Table
@@ -721,7 +425,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-       '@PipelineName'
+       @PipelineName
 	   ,'tmp.imis_Custom_SchoolAccredited'
        ,'stg.imis_Custom_SchoolAccredited'
        ,(
@@ -871,7 +575,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-       '@PipelineName'
+       @PipelineName
 	   ,'tmp.imis_RealMagnet'
        ,'stg.imis_RealMagnet'
        ,(
@@ -1026,7 +730,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-       '@PipelineName'
+      @PipelineName
 	   ,'tmp.imis_Verification'
        ,'stg.imis_Verification'
        ,(
@@ -1174,7 +878,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-       '@PipelineName'
+       @PipelineName
 	   ,'tmp.imis_UD_Table'
        ,'stg.imis_UD_Table'
        ,(
@@ -1394,7 +1098,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 	   ,'tmp.imis_member_types'
        ,'stg.imis_member_types'
        ,(
@@ -1525,7 +1229,7 @@ WHERE member_type IN (
 
 
 /*************************************************Meet_Master***********************************/
------add new meet master records to the Meet Master Staging Table
+---add new meet master records to the Meet Master Staging Table
 
 --MERGE stg.imis_Meet_Master AS DST
 --USING tmp.imis_Meet_Master AS SRC
@@ -1798,7 +1502,7 @@ WHERE member_type IN (
 
 --INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 --VALUES (
---		'@PipelineName'
+--		@PipelineName
 --	   ,'tmp.imis_Meet_Master'
 --       ,'stg.imis_Meet_Master'
 --       ,(
@@ -2156,7 +1860,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 	   ,'tmp.imis_Product_Function'
        ,'stg.imis_Product_Function'
        ,(
@@ -2352,7 +2056,7 @@ WHERE product_code IN (
 
 --INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 --VALUES (
---        '@PipelineName'
+--        @PipelineName
 --	   ,'tmp.imis_Custom_Address_Geocode'
 --       ,'stg.imis_Custom_Address_Geocode'
 --       ,(
@@ -2563,7 +2267,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 	   ,'tmp.imis_Product_Type'
        ,'stg.imis_Product_Type'
        ,(
@@ -2676,6 +2380,204 @@ WHERE prod_type IN (
 
 
 			  Truncate TABLE #audittemp
+
+/*******************Trans***************/
+----add new Transaction records to the Transaction Staging Table
+--MERGE stg.imis_Trans AS DST
+--USING tmp.imis_Trans AS SRC
+--       ON DST.TRANS_NUMBER = SRC.TRANS_NUMBER 
+--	   AND DST.LINE_NUMBER = SRC.LINE_NUMBER
+--	   AND DST.SUB_LINE_NUMBER = SRC.SUB_LINE_NUMBER
+--WHEN NOT MATCHED
+--THEN
+--INSERT (
+--[TRANS_NUMBER]
+--      ,[LINE_NUMBER]
+--      ,[BATCH_NUM]
+--      ,[OWNER_ORG_CODE]
+--      ,[SOURCE_SYSTEM]
+--      ,[JOURNAL_TYPE]
+--      ,[TRANSACTION_TYPE]
+--      ,[TRANSACTION_DATE]
+--      ,[BT_ID]
+--      ,[ST_ID]
+--      ,[INVOICE_REFERENCE_NUM]
+--      ,[DESCRIPTION]
+--      ,[CUSTOMER_NAME]
+--      ,[CUSTOMER_REFERENCE]
+--      ,[REFERENCE_1]
+--      ,[SOURCE_CODE]
+--      ,[PRODUCT_CODE]
+--      ,[EFFECTIVE_DATE]
+--      ,[PAID_THRU]
+--      ,[MONTHS_PAID]
+--      ,[FISCAL_PERIOD]
+--      ,[DEFERRAL_MONTHS]
+--      ,[AMOUNT]
+--      ,[ADJUSTMENT_AMOUNT]
+--      ,[PSEUDO_ACCOUNT]
+--      ,[GL_ACCT_ORG_CODE]
+--      ,[GL_ACCOUNT]
+--      ,[DEFERRED_GL_ACCOUNT]
+--      ,[INVOICE_CHARGES]
+--      ,[INVOICE_CREDITS]
+--      ,[QUANTITY]
+--      ,[UNIT_PRICE]
+--      ,[PAYMENT_TYPE]
+--      ,[CHECK_NUMBER]
+--      ,[CC_NUMBER]
+--      ,[CC_EXPIRE]
+--      ,[CC_AUTHORIZE]
+--      ,[CC_NAME]
+--      ,[TERMS_CODE]
+--      ,[ACTIVITY_SEQN]
+--      ,[POSTED]
+--      ,[PROD_TYPE]
+--      ,[ACTIVITY_TYPE]
+--      ,[ACTION_CODES]
+--      ,[TICKLER_DATE]
+--      ,[DATE_ENTERED]
+--      ,[ENTERED_BY]
+--      ,[SUB_LINE_NUMBER]
+--      ,[INSTALL_BILL_DATE]
+--      ,[TAXABLE_VALUE]
+--      ,[SOLICITOR_ID]
+--      ,[INVOICE_ADJUSTMENTS]
+--      ,[INVOICE_LINE_NUM]
+--      ,[MERGE_CODE]
+--      ,[SALUTATION_CODE]
+--      ,[SENDER_CODE]
+--      ,[IS_MATCH_GIFT]
+--      ,[MATCH_GIFT_TRANS_NUM]
+--      ,[MATCH_ACTIVITY_SEQN]
+--      ,[MEM_TRIB_ID]
+--      ,[RECEIPT_ID]
+--      ,[DO_NOT_RECEIPT]
+--      ,[CC_STATUS]
+--      ,[ENCRYPT_CC_NUMBER]
+--      ,[ENCRYPT_CC_EXPIRE]
+--      ,[FR_ACTIVITY]
+--      ,[FR_ACTIVITY_SEQN]
+--      ,[MEM_TRIB_NAME_TEXT]
+--      ,[CAMPAIGN_CODE]
+--      ,[IS_FR_ITEM]
+--      ,[ENCRYPT_CSC]
+--      ,[ISSUE_DATE]
+--      ,[ISSUE_NUMBER]
+--      ,[GL_EXPORT_DATE]
+--      ,[FR_CHECKBOX]
+--      ,[GATEWAY_REF]
+--      ,[TAX_AUTHORITY]
+--      ,[TAX_RATE]
+--      ,[TAX_1]
+--      ,[PRICE_ADJ]
+--      ,[TIME_STAMP]
+--      ,[IsActive]
+--      ,[StartDate]
+--	  )
+--VALUES (
+--SRC.[TRANS_NUMBER]
+--      ,SRC.[LINE_NUMBER]
+--      ,SRC.[BATCH_NUM]
+--      ,SRC.[OWNER_ORG_CODE]
+--      ,SRC.[SOURCE_SYSTEM]
+--      ,SRC.[JOURNAL_TYPE]
+--      ,SRC.[TRANSACTION_TYPE]
+--      ,SRC.[TRANSACTION_DATE]
+--      ,SRC.[BT_ID]
+--      ,SRC.[ST_ID]
+--      ,SRC.[INVOICE_REFERENCE_NUM]
+--      ,SRC.[DESCRIPTION]
+--      ,SRC.[CUSTOMER_NAME]
+--      ,SRC.[CUSTOMER_REFERENCE]
+--      ,SRC.[REFERENCE_1]
+--      ,SRC.[SOURCE_CODE]
+--      ,SRC.[PRODUCT_CODE]
+--      ,SRC.[EFFECTIVE_DATE]
+--      ,SRC.[PAID_THRU]
+--      ,SRC.[MONTHS_PAID]
+--      ,SRC.[FISCAL_PERIOD]
+--      ,SRC.[DEFERRAL_MONTHS]
+--      ,SRC.[AMOUNT]
+--      ,SRC.[ADJUSTMENT_AMOUNT]
+--      ,SRC.[PSEUDO_ACCOUNT]
+--      ,SRC.[GL_ACCT_ORG_CODE]
+--      ,SRC.[GL_ACCOUNT]
+--      ,SRC.[DEFERRED_GL_ACCOUNT]
+--      ,SRC.[INVOICE_CHARGES]
+--      ,SRC.[INVOICE_CREDITS]
+--      ,SRC.[QUANTITY]
+--      ,SRC.[UNIT_PRICE]
+--      ,SRC.[PAYMENT_TYPE]
+--      ,SRC.[CHECK_NUMBER]
+--      ,SRC.[CC_NUMBER]
+--      ,SRC.[CC_EXPIRE]
+--      ,SRC.[CC_AUTHORIZE]
+--      ,SRC.[CC_NAME]
+--      ,SRC.[TERMS_CODE]
+--      ,SRC.[ACTIVITY_SEQN]
+--      ,SRC.[POSTED]
+--      ,SRC.[PROD_TYPE]
+--      ,SRC.[ACTIVITY_TYPE]
+--      ,SRC.[ACTION_CODES]
+--      ,SRC.[TICKLER_DATE]
+--      ,SRC.[DATE_ENTERED]
+--      ,SRC.[ENTERED_BY]
+--      ,SRC.[SUB_LINE_NUMBER]
+--      ,SRC.[INSTALL_BILL_DATE]
+--      ,SRC.[TAXABLE_VALUE]
+--      ,SRC.[SOLICITOR_ID]
+--      ,SRC.[INVOICE_ADJUSTMENTS]
+--      ,SRC.[INVOICE_LINE_NUM]
+--      ,SRC.[MERGE_CODE]
+--      ,SRC.[SALUTATION_CODE]
+--      ,SRC.[SENDER_CODE]
+--      ,SRC.[IS_MATCH_GIFT]
+--      ,SRC.[MATCH_GIFT_TRANS_NUM]
+--      ,SRC.[MATCH_ACTIVITY_SEQN]
+--      ,SRC.[MEM_TRIB_ID]
+--      ,SRC.[RECEIPT_ID]
+--      ,SRC.[DO_NOT_RECEIPT]
+--      ,SRC.[CC_STATUS]
+--      ,SRC.[ENCRYPT_CC_NUMBER]
+--      ,SRC.[ENCRYPT_CC_EXPIRE]
+--      ,SRC.[FR_ACTIVITY]
+--      ,SRC.[FR_ACTIVITY_SEQN]
+--      ,SRC.[MEM_TRIB_NAME_TEXT]
+--      ,SRC.[CAMPAIGN_CODE]
+--      ,SRC.[IS_FR_ITEM]
+--      ,SRC.[ENCRYPT_CSC]
+--      ,SRC.[ISSUE_DATE]
+--      ,SRC.[ISSUE_NUMBER]
+--      ,SRC.[GL_EXPORT_DATE]
+--      ,SRC.[FR_CHECKBOX]
+--      ,SRC.[GATEWAY_REF]
+--      ,SRC.[TAX_AUTHORITY]
+--      ,SRC.[TAX_RATE]
+--      ,SRC.[TAX_1]
+--      ,SRC.[PRICE_ADJ]
+--      ,SRC.[TIME_STAMP]
+--      ,1
+--      ,@Today
+--	  );
+
+--	  	  INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
+--VALUES (
+--       '@PipelineName'
+--	   ,'tmp.imis_Trans'
+--       ,'stg.imis_Trans'
+--       ,(
+--                     SELECT count(*) AS action_count
+--                     FROM tmp.imis_Trans
+--        )
+--       ,(
+--             0
+--					 )
+--		 ,(SELECT count(*) AS action_count
+--                     FROM tmp.imis_Trans
+--				) 
+--       ,getdate()
+--       )
 
 /**************************************************table**********************/
 END TRY

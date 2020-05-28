@@ -1,0 +1,28 @@
+﻿CREATE TABLE [tmp].[Fact_Registrations] (
+    [Seqn]                 INT             NULL,
+    [Member_ID]            VARCHAR (10)    NULL,
+    [Product_Major]        VARCHAR (30)    NULL,
+    [Product_Code]         VARCHAR (31)    NULL,
+    [Order_Number]         NUMERIC (15, 2) NULL,
+    [Line_Number]          NUMERIC (15, 2) NULL,
+    [Quantity_Ordered]     NUMERIC (15, 6) NULL,
+    [Quantity_Shipped]     NUMERIC (15, 6) NULL,
+    [Quantity_Backordered] NUMERIC (15, 6) NULL,
+    [Unit_Price]           MONEY           NULL,
+    [Registrant_Class]     VARCHAR (10)    NULL,
+    [Registrant_Status]    VARCHAR (5)     NULL,
+    [Function_Type]        VARCHAR (15)    NULL,
+    [Member_Type]          VARCHAR (5)     NULL,
+    [Salary_Range]         VARCHAR (5)     NULL,
+    [Race_ID]              VARCHAR (60)    NULL,
+    [Origin]               VARCHAR (60)    NULL,
+    [Primary_Chapter]      VARCHAR (15)    NULL,
+    [Gender]               VARCHAR (1)     NULL,
+    [Status]               VARCHAR (5)     NULL,
+    [Category]             VARCHAR (5)     NULL,
+    [Member_Status]        VARCHAR (10)    NULL,
+    [Address_Num1]         INT             NULL,
+    [Address_Num2]         INT             NULL,
+    [Source_TableName]     VARCHAR (50)    NULL
+);
+

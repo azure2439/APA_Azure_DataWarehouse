@@ -1,6 +1,7 @@
 ﻿
 
-CREATE PROCEDURE [etl].[usp_IMIS_Log_Table_Counts]
+
+CREATE PROCEDURE [etl].[usp_Log_Table_Counts]
  (
 	 @RowsRead INT
 	,@RowsCopied INT

@@ -12,21 +12,23 @@
     [event_id]            INT            NULL,
     [log_id]              INT            NOT NULL,
     [submitted_time]      DATETIME       NOT NULL,
-    [begin_time]          DATETIME       NULL,
+    [begin_time]          VARCHAR (50)   NULL,
     [city]                VARCHAR (40)   NULL,
     [country]             VARCHAR (20)   NULL,
-    [description]         TEXT           NULL,
-    [end_time]            DATETIME       NULL,
+    [description]         VARCHAR (MAX)  NULL,
+    [end_time]            VARCHAR (50)   NULL,
     [provider_name]       VARCHAR (80)   NULL,
     [state]               VARCHAR (15)   NULL,
     [title]               VARCHAR (200)  NULL,
     [is_carryover]        BIT            NOT NULL,
     [is_pro_bono]         BIT            NOT NULL,
-    [learning_objectives] TEXT           NULL,
+    [learning_objectives] VARCHAR (MAX)  NULL,
     [timezone]            VARCHAR (50)   NULL,
     [author_type]         VARCHAR (50)   NULL,
     [updated_time]        DATETIME       NULL,
     [created_time]        DATETIME       NULL,
     CONSTRAINT [cm_claim_pkey] PRIMARY KEY CLUSTERED ([id] ASC)
 );
+
+
 

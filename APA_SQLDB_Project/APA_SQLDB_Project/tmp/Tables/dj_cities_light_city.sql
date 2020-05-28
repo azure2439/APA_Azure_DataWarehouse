@@ -3,10 +3,10 @@
     [name_ascii]      VARCHAR (200)  NOT NULL,
     [slug]            VARCHAR (50)   NOT NULL,
     [geoname_id]      INT            NULL,
-    [alternate_names] TEXT           NULL,
+    [alternate_names] VARCHAR (MAX)  NULL,
     [name]            VARCHAR (200)  NOT NULL,
     [display_name]    VARCHAR (200)  NOT NULL,
-    [search_names]    TEXT           NOT NULL,
+    [search_names]    VARCHAR (MAX)  NULL,
     [latitude]        NUMERIC (8, 5) NULL,
     [longitude]       NUMERIC (8, 5) NULL,
     [region_id]       INT            NULL,
@@ -16,4 +16,6 @@
     [timezone]        VARCHAR (40)   NULL,
     CONSTRAINT [cities_light_city_pkey] PRIMARY KEY CLUSTERED ([id] ASC)
 );
+
+
 

@@ -11,7 +11,9 @@ Added By:		Morgan Diestler on 2/28/2020
 
 
 
-CREATE procedure [etl].[usp_IMIS_Dimension_Table_Merge] @PipelineName varchar(30) = 'DimensionTablesUpdate'
+CREATE procedure [etl].[usp_IMIS_Dimension_Table_Merge] 
+@PipelineName varchar(30) 
+
 as
 
 Begin
@@ -104,7 +106,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 		,'tmp.imis_Name_Address'       
        ,'rpt.dimAddress'
 	          ,(
@@ -225,7 +227,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 		,'tmp.imis_Product'
        ,'rpt.dimChapter'
               ,(
@@ -333,6 +335,7 @@ WHEN NOT MATCHED
       ,[IsActive]
       ,[StartDate]
 	  ,[CohortQuarter]
+	  ,[Cohort_MemberType]
 
  
           
@@ -357,6 +360,7 @@ WHEN NOT MATCHED
 	  ,1
       ,@Today
 	  ,'newcohortquarter'
+	  ,'newcohortmemtype'
 	
                      ) 
 
@@ -371,9 +375,9 @@ INTO #audittemp;
 --  Update Cohort values for the new members only
 update A set A.cohort =
 case when 
-B.member_type = 'MEM' and MEMBER_STATUS = 'N' and CATEGORY = 'NM1' then (case when month(B.Join_Date) < 10 then year(join_date) when month(B.Join_Date) >= 10 then  year(join_date)+1 else 0 end)
-when B.member_type = 'STU' and MEMBER_STATUS = 'N'  then (case when month(B.Join_Date) < 10 then year(join_date) when month(B.Join_Date) >= 10 then  year(join_date)+1 else 0 end)
-else 0
+B.member_type = 'MEM' and MEMBER_STATUS = 'N' and CATEGORY = 'NM1' then (case when month(B.Join_Date) < 10 then year(join_date) when month(B.Join_Date) >= 10 then  year(join_date)+1 else '0' end)
+when B.member_type = 'STU' and MEMBER_STATUS = 'N'  then (case when month(B.Join_Date) < 10 then year(join_date) when month(B.Join_Date) >= 10 then  year(join_date)+1 else '0' end)
+else '0'
 end
 from rpt.dimmember A inner join tmp.imis_name B on
 A.member_id = B.ID
@@ -383,19 +387,30 @@ where cohort = 'newcohort'
 --  Update Cohort Quarter values for the new members only
 update A set A.cohortquarter =
 case when 
-B.member_type = 'MEM' and MEMBER_STATUS = 'N' and CATEGORY = 'NM1' then (case when month(B.Join_Date) between 10 and 12 then 'Q1' when month(B.Join_Date) between 1 and 3 then 'Q2' when month(B.Join_Date) between 4 and 6 then 'Q3' when month(B.Join_Date) between 7 and 9 then 'Q4' else 0 end)
-when B.member_type = 'STU' and MEMBER_STATUS = 'N'  then (case when month(B.Join_Date) between 10 and 12 then 'Q1' when month(B.Join_Date) between 1 and 3 then 'Q2' when month(B.Join_Date) between 4 and 6 then 'Q3' when month(B.Join_Date) between 7 and 9 then 'Q4' else 0 end)
-else 0
+B.member_type = 'MEM' and MEMBER_STATUS = 'N' and CATEGORY = 'NM1' then (case when month(B.Join_Date) between 10 and 12 then 'Q1' when month(B.Join_Date) between 1 and 3 then 'Q2' when month(B.Join_Date) between 4 and 6 then 'Q3' when month(B.Join_Date) between 7 and 9 then 'Q4' else '0' end)
+when B.member_type = 'STU' and MEMBER_STATUS = 'N'  then (case when month(B.Join_Date) between 10 and 12 then 'Q1' when month(B.Join_Date) between 1 and 3 then 'Q2' when month(B.Join_Date) between 4 and 6 then 'Q3' when month(B.Join_Date) between 7 and 9 then 'Q4' else '0' end)
+else '0'
 end
 from rpt.dimmember A join tmp.imis_name B on
 A.member_id = B.ID
 where cohortquarter = 'newcohortquarter'
 
+--  Update Cohort Member Type values for the new members only
+update A set A.Cohort_MemberType =
+case when 
+B.member_type = 'MEM' and MEMBER_STATUS = 'N' and CATEGORY = 'NM1' then 'New Member'
+when B.member_type = 'STU' and MEMBER_STATUS = 'N'  then 'Student'
+else ''
+end
+from rpt.dimmember A join tmp.imis_name B on
+A.member_id = B.ID
+where Cohort_MemberType = 'newcohortmemtype'
+
 
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 		 ,'tmp.imis_Name'
        ,'rpt.dimMember'
              ,(
@@ -425,7 +440,7 @@ VALUES (
        )
 
 ;with cte_mem as
-(select distinct Member_ID, Cohort, Cohortquarter from rpt.dimMember
+(select distinct Member_ID, Cohort, Cohortquarter, Cohort_MemberType from rpt.dimMember
 where Member_ID in
 (Select Member_ID from tmp.imis_Name)
 )
@@ -449,6 +464,7 @@ INSERT INTO rpt.dimMember (
       ,[IsActive]
       ,[StartDate]
 	  ,[Cohortquarter]
+	  ,[Cohort_MemberType]
 
  
                  )
@@ -471,6 +487,7 @@ select distinct
       ,1
       ,@Today
 	  ,B.[Cohortquarter]
+	  ,B.[Cohort_MemberType]
            
          
 FROM 
@@ -537,7 +554,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 		 ,'tmp.imis_Member_Types'
        ,'rpt.dimMemberType'
              ,(
@@ -642,7 +659,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 		 ,'tmp.imis_Gen_Tables'
        ,'rpt.dimOrg'
              ,(
@@ -763,7 +780,7 @@ tmp.imis_Gen_Tables where table_name = 'Org_Type' and
 
 --INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 --VALUES (
---		'@PipelineName'
+--		@PipelineName
 --       ,'rpt.dimRace'
 --       ,'tmp.imis_Gen_Tables'
 --       ,(
@@ -871,7 +888,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 		,'tmp.imis_Gen_Tables'
        ,'rpt.dimSalary'
               ,(
@@ -980,7 +997,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 		,'tmp.imis_Product'
        ,'rpt.dimProductCode'
               ,(
@@ -1085,7 +1102,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 		,'tmp.imis_Product_Type'
        ,'rpt.dimProductType'
               ,(
@@ -1186,7 +1203,7 @@ INTO #audittemp;
 
 INSERT INTO etl.executionlog (pipeline_name, source_table, target_table, insert_count, update_count, rows_read, datetimestamp)
 VALUES (
-		'@PipelineName'
+		@PipelineName
 		,'tmp.imis_Gen_Tables'
        ,'rpt.dimSourceCode'
               ,(

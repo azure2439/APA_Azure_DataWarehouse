@@ -1,0 +1,25 @@
+﻿CREATE TABLE [tmp].[rptfact_registrations] (
+    [Seqn]                 INT             NULL,
+    [MemberIDKey]          INT             NOT NULL,
+    [ProductCodeKey]       INT             NOT NULL,
+    [Order_Number]         NUMERIC (15, 2) NULL,
+    [Line_Number]          NUMERIC (15, 2) NULL,
+    [Quantity_Ordered]     NUMERIC (15, 6) NULL,
+    [Quantity_Shipped]     NUMERIC (15, 6) NULL,
+    [Quantity_Backordered] NUMERIC (15, 6) NULL,
+    [Unit_Price]           MONEY           NULL,
+    [MemberTypeIDKey]      INT             NOT NULL,
+    [SalaryIDKey]          INT             NOT NULL,
+    [RaceIDKey]            INT             NOT NULL,
+    [StatusKey]            INT             NOT NULL,
+    [RegistrantStatusKey]  INT             NOT NULL,
+    [RegistrationClassKey] INT             NOT NULL,
+    [ChapterKey]           INT             NOT NULL,
+    [MemberStatus_Key]     INT             NOT NULL,
+    [Address_Num1_Key]     INT             NOT NULL,
+    [Address_Num2_Key]     INT             NOT NULL,
+    [LastUpdatedby]        VARCHAR (40)    CONSTRAINT [df_Registrations_LastUpdatedBy] DEFAULT (suser_sname()) NULL,
+    [LastModified]         DATETIME        CONSTRAINT [df_Registrations_LastModified] DEFAULT (getdate()) NULL,
+    [Member_ID]            VARCHAR (10)    NULL
+);
+
